@@ -53,6 +53,7 @@ _commend_id_ stored as document because lists are generally inefficient with sca
 # Current Data Model
 
 ### **Users**
+- `user_id` : string - Firebase-generated unique identifier of same value as document. Storing it within the document improves consistency, redundancy, and paves an easier path for querying.
 - `username` : string - represents readable identifier of the user account, which is the user's **email address** with Google auth.
     - named username in case I add any other authentication providers which don't represent the user's email
 - `pfp` : string - link to the image source URL of the user's profile picture (if any)

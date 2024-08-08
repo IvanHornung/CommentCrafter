@@ -10,10 +10,15 @@ from flask import Blueprint, request, jsonify
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import logging
-
+import os
+from typing import Tuple
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('./config/comment-crafter-firebase-adminsdk.json')
+absolute_path = os.path.dirname( # obtain absolute path of one level about this file's directory (/app)
+    os.path.dirname(os.path.abspath(__file__)) 
+)
+config_path = os.path.join(absolute_path, 'config', 'comment-crafter-firebase-adminsdk.json')
+cred = credentials.Certificate(config_path)
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -25,41 +30,55 @@ logging.basicConfig(level=logging.INFO)
 
 
 @auth_bp.route('/create_user', methods=['POST'])
-def login():
+def create_user_account():
+    try:
+        data = request.get_json()
+        current_time = firestore.SERVER_TIMESTAMP
+
+        user_id, username = data.get('user_id'), data.get('username')
+        if not user_id or not username:
+            return jsonify({"error": "User ID and username not found"}), 400
+        
+        pfp = data.get('pfp', "")
+
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+
+        if user_doc.exists: #logic for if user exists
+            # update last login and pfp
+            logger.info(f"User {user_id} already exists, updating entry...")
+            user_ref.update({
+                'last_login': current_time,
+                'pfp': pfp
+            })
+            return jsonify({"message": "User already exists, user data updated"}), 200
+        else : # logic for if user doesn't exist
+            # create new user document
+            user_ref.set({
+                'user_id': user_id,
+                'username': username,
+                'pfp': pfp,
+                'total_generations': 0,
+                'created_at': current_time,
+                'last_login': current_time
+            })
+            logger.info(f"User {user_id} created successfully")
+            return jsonify({"message": "User created successfully"}), 201
+    
+    except Exception as e:
+        return jsonify({"error" : str(e)}), 500
+
+
+
+@auth_bp.route('/create_userTEST', methods=['POST'])
+def create_accountTEST():
     token: str = request.json.get('token')
     if not token:
         return jsonify({'error': 'Token missing'}), 400
 
     try :
+        logger.info("Received token")
         return jsonify({'message': 'Token received successfully'}), 200
-    except firebase_admin.auth.AuthError as e:
-        logger.error(f'Auth error: {e}')
-        return jsonify({'error': 'Auth error'}), 401
-    except Exception as e:
-        logger.error(f'Unexpected error: {e}')
-        return jsonify({'error': 'Unexpected error'}), 500
-
-
-
-@auth_bp.route('/create_userTEST', methods=['POST'])
-def create_account():
-    token = request.json.get('token')
-    if not token:
-        return jsonify({'error': 'Token missing'}), 400
-
-    try:
-        decoded_token = auth.verify_id_token(token)
-        uid = decoded_token['uid']
-        user = auth.get_user(uid)
-
-        # Store user data in Firestore
-        user_data = {
-            'username': user.username,
-        }
-        db.collection('users').document(user.uid).set(user_data)
-
-        return jsonify({'message': 'User account created successfully'}), 200
-
     except firebase_admin.auth.AuthError as e:
         logger.error(f'Auth error: {e}')
         return jsonify({'error': 'Auth error'}), 401
