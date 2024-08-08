@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-
+import axios from 'axios';
 
 import {
     getAuth,
@@ -14,6 +14,7 @@ import {
 } from "firebase/auth";
 
 
+const api_url = "http://127.0.0.1:5000";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -41,8 +42,19 @@ const auth = getAuth(app);
  * Sign the uer in through Google with popup
  * @returns A Promise that resolves with the user's credentials
  */
-export function signUserInWithGoogle(): Promise<UserCredential> {
-    return signInWithPopup(auth, new GoogleAuthProvider());
+export async function signUserInWithGoogle(): Promise<UserCredential> {
+    const userCredential = await signInWithPopup(auth, new GoogleAuthProvider());
+
+    // Get the ID token of the signed-in user
+    const token = await userCredential.user.getIdToken();
+    console.log(token);
+
+    // send the token to backend API to create the user in Firestore
+    const response = await axios.post(`${api_url}/auth/create_user`, { token });
+
+    console.log('Response from backend:', response.data);
+
+    return userCredential;
 }
 
 /**
