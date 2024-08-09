@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import config from "@/app/config";
 
 import {
     getAuth,
@@ -12,8 +13,6 @@ import {
     Unsubscribe,
 } from "firebase/auth";
 
-
-const api_url = "http://127.0.0.1:5000";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -69,7 +68,7 @@ export function onAuthStateChangedHelper(callback: (user: User | null) => void):
             }
             
             // Call cc-api-service to handle account creation logic
-            fetch(`${api_url}/auth/create_user`, {
+            fetch(`${config.api_url}/auth/create_user`, {
                 method: 'POST', // Note: account will not be created if already exists (per backend logic)
                 headers: {
                     'Content-Type': 'application/json'

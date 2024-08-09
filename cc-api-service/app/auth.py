@@ -67,21 +67,3 @@ def create_user_account():
     
     except Exception as e:
         return jsonify({"error" : str(e)}), 500
-
-
-
-@auth_bp.route('/create_userTEST', methods=['POST'])
-def create_accountTEST():
-    token: str = request.json.get('token')
-    if not token:
-        return jsonify({'error': 'Token missing'}), 400
-
-    try :
-        logger.info("Received token")
-        return jsonify({'message': 'Token received successfully'}), 200
-    except firebase_admin.auth.AuthError as e:
-        logger.error(f'Auth error: {e}')
-        return jsonify({'error': 'Auth error'}), 401
-    except Exception as e:
-        logger.error(f'Unexpected error: {e}')
-        return jsonify({'error': 'Unexpected error'}), 500

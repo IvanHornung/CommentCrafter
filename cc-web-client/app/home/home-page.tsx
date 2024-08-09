@@ -20,7 +20,7 @@ export default function HomePage() {
         console.log("Product Link:", productLink);
         console.log("Number of Comments:", commentCount);
         console.log("Pollution Level:", pollutionLevel);
-        //TODO: generation logic here
+        //TODO: add restrictions and error handling
         const queryString = new URLSearchParams({
             commentCount: commentCount.toString(),
             pollutionLevel: pollutionLevel,

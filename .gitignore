@@ -1,2 +1,3 @@
 cc-api-service/config
 .venv
+__pycache__/
