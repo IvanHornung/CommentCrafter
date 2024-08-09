@@ -1,0 +1,16 @@
+.commentInputContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 120;
+    font-size: 14px;
+}
+  
+.numberInput {
+    width: 160px; /* Adjust width as necessary */
+    padding: 8px;
+    margin-top: -4px;
+    font-size: 15px;
+}
+  

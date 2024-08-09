@@ -1,0 +1,21 @@
+.generateButtonContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 150px;
+    margin-top: 15px;
+  }
+  
+  .generateButton {
+    padding: 15px 40px;
+    font-size: 18px;
+    background-color: var(--tomato); /* Tomato */
+    color: var(--cosmic-latte); /* Deep Sky Blue */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.generateButton:hover {
+    background-color: var(--battleship-gray); /* Cosmic Latte */
+}
+  

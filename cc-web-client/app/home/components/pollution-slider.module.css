@@ -1,0 +1,15 @@
+.sliderContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+  
+
+.sliderValuesContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    font-size: 10px;
+}
