@@ -1,11 +1,14 @@
 import datetime
-from flask import Blueprint, request, jsonify
+from typing import Any, Dict, Optional
+from flask import Blueprint, Response, request, jsonify
 import threading
 from .auth import db
 from firebase_admin import firestore
 from furl import furl
 from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
+from concurrent.futures import ThreadPoolExecutor
+import time
 
 
 gen_bp = Blueprint('gen', __name__)
@@ -17,153 +20,190 @@ def canonicalize_url(link: str) -> str:
     f.fragment = ''
     return f.url
 
+def extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    user_id = data.get('user_id')
+    product_link = canonicalize_url(data.get('link', ''))
+    num_requested_comments = data.get('numCommentsFirstPage', 50)
+    pollution_level = data.get('pollutionLevel', 0)
 
-@gen_bp.route('/generate-comments', methods=['POST'])
-def generate_comments():
-    try:
-        data = request.get_json()
-        # print("Reached API endpoint /generate-comments with data\n")
-        # print(data)
+    product_data = {
+        'url': product_link,
+        'product_name': "Lounge Chairs",
+        'description': "Herman Miller, super expensive",
+        'est_price': "$5,595.00"
+    }
 
-        user_id = data['user_id']
-        product_link = canonicalize_url(data['link'])
-        num_requested_comments = data['numCommentsFirstPage']
-        pollution_level = data['pollutionLevel']
+    if not user_id or not product_link:
+        return None
 
-        product_data = {
-            'url': product_link, #data.get('url'),
-            'product_name': "Lounge Chairs", #data.get('product_name'),
-            'description': "Herman Miller, super expensive", #data.get('description'),
-            'est_price': "$5,595.00" #data.get('est_price')
-        }
+    return {
+        'user_id': user_id,
+        'product_link': product_link,
+        'num_requested_comments': num_requested_comments,
+        'pollution_level': pollution_level,
+        'product_data': product_data
+    }
 
-        user_ref = db.collection('users').document(user_id)
-        user_doc = user_ref.get()
-        # Check if user exists
-        if not user_doc.exists:
-            return jsonify({"error": "User does not exist."}), 404
+def get_or_create_product(user_id: str, product_link: str, num_requested_comments: int, product_data: Dict[str, str]) -> Optional[firestore.DocumentReference]:
+    user_ref = db.collection('users').document(user_id)
+    user_doc = user_ref.get()
 
-        # Create the product with an auto-generated ID
-        products_ref = user_ref.collection('products')
+    if not user_doc.exists:
+        return None
 
+    products_ref = user_ref.collection('products')
+    existing_product_query = products_ref.where('url', '==', product_link).get()
 
-        # Query to check if the product already exists based on the provided URL and timestamp
-        products_ref = user_ref.collection('products')
-        existing_product_query = products_ref.where('url', '==', product_link).get()
+    if existing_product_query:
+        product_ref = existing_product_query[0].reference  
+        last_updated = existing_product_query[0].get('last_updated')
 
-        if existing_product_query:
-            product_ref = existing_product_query[0].reference  # Get the first matching document reference
+        now = datetime.now(timezone.utc)
+        five_seconds_ago = now - timedelta(seconds=5)
+        five_seconds_later = now + timedelta(seconds=5)
+        
+        if last_updated and five_seconds_ago <= last_updated <= five_seconds_later:
+            return None
 
-            # Check if the product was updated within the last 5 seconds
-            last_updated = existing_product_query[0].get('last_updated')
-
-            now = datetime.now(timezone.utc)
-            five_seconds_ago = now - timedelta(seconds=5)
-            five_seconds_later = now + timedelta(seconds=5)
-            
-            if last_updated and last_updated >= five_seconds_ago and last_updated <= five_seconds_later:
-                return jsonify({"warning": "Duplicate request detected.", "message": "Product with this URL already exists in the store and was created very recently."}), 409
-
-            # If the request is not a duplicate, update the existing document
-            product_ref.update({
-                'total_comments': firestore.Increment(num_requested_comments),
-                'last_updated': firestore.SERVER_TIMESTAMP
-            })
-
-        else:
-            # If the product does not exist, create a new document
-            product_ref = products_ref.document()  # Get a new document reference
-            product_ref.set({
-                'url': product_data['url'],
-                'product_name': product_data['product_name'],
-                'description': product_data['description'],
-                'total_comments': num_requested_comments,
-                'est_price': product_data['est_price'],
-                'last_updated': firestore.SERVER_TIMESTAMP
-            })
-
-        initial_comments = [f"Comment numba {i+1}" for i in range(50)]
-
-        # Store each comment in the `generated_comments` subcollection
-        generated_comments_ref = product_ref.collection('generated_comments')
-        for comment in initial_comments:
-            generated_comments_ref.add({
-                'comment': comment,
-                'relevancy_score': 0.5,  # Placeholder score, adjust as needed
-                'offensivity_score': 0.1,  # Placeholder score, adjust as needed
-                'timestamp': firestore.SERVER_TIMESTAMP
-            })
-
-        user_ref.update({
-            'total_generations': firestore.Increment(num_requested_comments)
+        product_ref.update({
+            'total_comments': firestore.Increment(num_requested_comments),
+            'last_updated': firestore.SERVER_TIMESTAMP
         })
 
-        return jsonify({"status": "success", "product_id": product_ref.id}), 201
+    else:
+        product_ref = products_ref.document()  
+        product_ref.set({
+            'url': product_data['url'],
+            'product_name': product_data['product_name'],
+            'description': product_data['description'],
+            'total_comments': num_requested_comments,
+            'est_price': product_data['est_price'],
+            'last_updated': firestore.SERVER_TIMESTAMP
+        })
+
+    return product_ref
+
+def generate_initial_comments(product_ref: firestore.DocumentReference, num_initial_comments: int = 50) -> list[str]:
+    initial_comments = [f"Comment numba {i+1}" for i in range(num_initial_comments)]
+    generated_comments_ref = product_ref.collection('generated_comments')
+
+    for comment in initial_comments:
+        generated_comments_ref.add({
+            'comment': comment,
+            'relevancy_score': 0.5,  
+            'offensivity_score': 0.1,  
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+    
+    return initial_comments
+
+# This function runs in a background thread to generate and store the remaining comments if the total requested count exceeds 50.
+def generate_remaining_comments(product_ref, total_comments, num_initial_comments):
+    remaining_comments = total_comments - num_initial_comments
+    comments = [f"Multithread ahh Comment numba {i + num_initial_comments + 1}" for i in range(remaining_comments)]
+    
+    generated_comments_ref = product_ref.collection('generated_comments')
+    for comment in comments:
+        generated_comments_ref.add({
+            'comment': comment,
+            'relevancy_score': 0.5,  # Placeholder 
+            'offensivity_score': 0.1,  # Placeholder
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+        time.sleep(0.2)
+
+@gen_bp.route('/generate-comments', methods=['POST'])
+def generate_comments() -> Response:
+    try:
+        data = request.get_json()
+        validated_data = extract_and_validate_data(data)
+        
+        if validated_data is None:
+            return jsonify({"error": "Invalid input data."}), 400
+
+        product_ref = get_or_create_product(
+            validated_data['user_id'], 
+            validated_data['product_link'], 
+            validated_data['num_requested_comments'], 
+            validated_data['product_data']
+        )
+        
+        if product_ref is None:
+            return jsonify({"warning": "Duplicate request detected or user does not exist."}), 409
+
+        initial_comments = generate_initial_comments(product_ref)
+        
+        # multithread if necessary (more than 1 page of comments requested)
+        if int(validated_data['num_requested_comments']) > 50:
+            print("\t\tMore than 50 comments requested, kicking off multithread")
+            executor = ThreadPoolExecutor(max_workers=1)
+            executor.submit(
+                generate_remaining_comments, 
+                product_ref, 
+                validated_data['num_requested_comments'], 
+                len(initial_comments)
+            )
+
+        return jsonify({"status": "success", "product_id": product_ref.id, "initial_comments": initial_comments}), 201
     
     except Exception as e:
         print("\t\tMAJOR ERROR", e)
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
 
 
-# This function runs in a background thread to generate and store the remaining comments if the total requested count exceeds 50.
-def generate_remaining_comments(user_id, product_id, remaining_count):
-    comments_ref = db.collection('users').document(user_id).collection('products').document(product_id).collection('generated_comments')
-
-    remaining_comments = [f"Comment numba {i+51}" for i in range(remaining_count)]
-    for comment in remaining_comments:
-        comment_doc = comments_ref.document()
-        comment_doc.set({
-            'comment': comment,
-            'relevancy_score': 0.5,  # Replace with actual score
-            'offensivity_score': 0.1,  # Replace with actual score
-            'timestamp': firestore.SERVER_TIMESTAMP
-        })
-
-    # Update the product document to mark generation as complete
-    product_ref = db.collection('users').document(user_id).collection('products').document(product_id)
-    # Once all comments are generated and stored, the product document’s generation_status is updated to "complete".
-    product_ref.update({
-        'generation_status': 'complete'
-    })
-
 # This route allows the client to poll for new comments and check the generation status.
 @gen_bp.route('/poll-comments', methods=['GET'])
-def poll_comments():
-    # The API expects user_id and product_id as query parameters.
-    user_id = request.args.get('user_id')
-    product_id = request.args.get('product_id')
-    last_timestamp = request.args.get('last_timestamp')
+def poll_comments() -> Response:
+    try:
+        # extract query parameters
+        user_id = request.args.get('user_id')
+        product_id = request.args.get('product_id')
+        last_comment_timestamp = request.args.get('last_comment_timestamp', None)
 
-    if not user_id or not product_id:
-        return jsonify({'error': 'Missing user_id or product_id'}), 400
+        print(f"\tPolling comments for product_id: {product_id} with last_comment_timestamp: {last_comment_timestamp}")
 
-    product_ref = db.collection('users').document(user_id).collection('products').document(product_id)
-    product_doc = product_ref.get()
+        if not user_id or not product_id:
+            return jsonify({"error": "User ID and Product ID are required."}), 400
 
-    if not product_doc.exists:
-        return jsonify({'error': 'Product not found'}), 404
+        user_ref = db.collection('users').document(user_id)
+        product_ref = user_ref.collection('products').document(product_id)
+        product_doc = product_ref.get()
 
-    product_data = product_doc.to_dict()
-    generation_status = product_data.get('generation_status', 'in_progress')
+        if not product_doc.exists:
+            print("\t\tERROR @poll_comments - Product document not found.")
+            return jsonify({"error": "Product document not found."}), 404
 
-    # The comments are queried from Firestore, ordered by timestamp.
-    comments_query = product_ref.collection('generated_comments').order_by('timestamp')
+        # Query for new comments in the generated_comments subcollection
+        generated_comments_ref = product_ref.collection('generated_comments')
+        
+        if last_comment_timestamp:
+            # Convert string timestamp to datetime
+            last_comment_dt = datetime.fromisoformat(last_comment_timestamp)
+            new_comments_query = generated_comments_ref.where('timestamp', '>', last_comment_dt).order_by('timestamp')
+        else:
+            new_comments_query = generated_comments_ref.order_by('timestamp')
+        
+        new_comments_docs = new_comments_query.get()
 
-    if last_timestamp:
-        comments_query = comments_query.start_after(last_timestamp)
+        # Collect new comments
+        new_comments = [
+            {
+                'comment': doc.get('comment'),
+                'relevancy_score': doc.get('relevancy_score'),
+                'offensivity_score': doc.get('offensivity_score'),
+                'timestamp': doc.get('timestamp').isoformat()
+            }
+            for doc in new_comments_docs
+        ]
 
-    new_comments_docs = comments_query.get()
+        total_comments = product_doc.get('total_comments')
 
-    new_comments = []
-    for doc in new_comments_docs:
-        new_comments.append({
-            'comment': doc.get('comment'),
-            'relevancy_score': doc.get('relevancy_score'),
-            'offensivity_score': doc.get('offensivity_score'),
-            'timestamp': doc.get('timestamp')
-        })
+        return jsonify({
+            "status": "success",
+            "new_comments": new_comments,
+            "total_comments": total_comments
+        }), 200
 
-    return jsonify({
-        'generation_status': generation_status,
-        'new_comments': new_comments
-    })
+    except Exception as e:
+        print("\t\tMAJOR ERROR @poll_comments", e)
+        return jsonify({"error": "An error occurred.", "message": str(e)}), 500
