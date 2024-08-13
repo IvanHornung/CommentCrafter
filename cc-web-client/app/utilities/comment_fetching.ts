@@ -3,7 +3,7 @@ import config from "@/app/config";
 type FetchCommentsProps = {
   user_id: string | null;
   link: string | null;
-  numCommentsFirstPage: number;
+  numRequestedComments: number;
   pollutionLevel: string | null;
 }
 
@@ -18,7 +18,7 @@ type FetchCommentsProps = {
  * @param {number} numCommentsFirstPage - The number of comments per page.
  * @param {string} pollutionLevel - The pollution level.
  */
-export async function fetchInitialComments({ user_id, link, numCommentsFirstPage, pollutionLevel }:
+export async function fetchInitialComments({ user_id, link, numRequestedComments: numCommentsFirstPage, pollutionLevel }:
    FetchCommentsProps) : Promise<{ comments: string[], productID: string | null }> {
   console.log(`Reached pollForRemainingComments with ${user_id}, ${link}, ${numCommentsFirstPage}, and ${pollutionLevel}`);
     // TODO: handle product ID logic
@@ -35,7 +35,6 @@ export async function fetchInitialComments({ user_id, link, numCommentsFirstPage
         pollutionLevel,
       }),
     });
-
     if (!response.ok) {
       throw new Error("Failed to generate comments");
     }

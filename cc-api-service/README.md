@@ -16,6 +16,7 @@ users (collection)
 │       │   ├── description: <string>
 │       │   ├── total_comments: <int>
 │       │   ├── est_price: <double>
+│       │   ├── last_updated: <timestamp>
 │       │   └── generated_comments (subcollection)
 │       │       ├── comment_id (document)
 │       │       │   ├── comment: <string>

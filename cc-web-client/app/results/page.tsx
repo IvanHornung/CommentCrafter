@@ -35,10 +35,7 @@ export default function ResultPage() {
         // If we're here, it means we're still loading comments in the background.
         // Continue polling until all comments are loaded
         try {
-            setLoading(true);
-            // TODO: logic for how many init comments want (probably going to be 50), use ternary
-            const numCommentsFirstPage = 0;
-
+            setLoading(true);            
             const user: User | null = await getCurrentUser();
             
             if (!user) {
@@ -48,12 +45,14 @@ export default function ResultPage() {
             }
 
             // const { comments: newComments, productID: newProductID } = await fetchInitialComments({
-            fetchInitialComments({
+            let a = await fetchInitialComments({
                 user_id: user ? user.uid : "NONE",                    
                 link: productLink,
-                numCommentsFirstPage: numCommentsFirstPage,
+                numRequestedComments: parseInt(
+                    commentCount ? commentCount : "50", 10),
                 pollutionLevel: pollutionLevel
             });
+
 
             // setComments(prevComments => [...prevComments, ...newComments]);
             // if (newProductID) setProductID(newProductID);
