@@ -32,7 +32,7 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-
+let currentUser: User | null = null;
 
 // The below wrapper functions allow us to not expose the auth variable to our components
 
@@ -60,7 +60,7 @@ export function signUserOut(): Promise<void> {
 export function onAuthStateChangedHelper(callback: (user: User | null) => void): Unsubscribe {
     return onAuthStateChanged(auth, (user) => { 
         if (user) { // if user is signed in
-
+            currentUser = user;
             const userData = { // only fields we need from client side
                 user_id: user.uid,
                 username: user.email,
@@ -89,6 +89,22 @@ export function onAuthStateChangedHelper(callback: (user: User | null) => void):
         } else { // else user is signed out
             console.log("User is signed out.");
             callback(user);
+        }
+    });
+}
+
+/**
+ * Get the current user. Returns a promise that resolves to the user if available, otherwise null.
+ */
+export function getCurrentUser(): Promise<User | null> {
+    return new Promise((resolve) => {
+        if (currentUser) {
+            resolve(currentUser);
+        } else {
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                resolve(user);
+            });
         }
     });
 }

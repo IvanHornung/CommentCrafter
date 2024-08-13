@@ -11,6 +11,8 @@ import { onAuthStateChangedHelper } from "../utilities/firebase/firebase";
 import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 
+
+
 export default function NavBar() {
     // maintaining state within function in js is called Closure
     
