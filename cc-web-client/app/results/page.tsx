@@ -11,7 +11,8 @@ import { getCurrentUser } from '../utilities/firebase/firebase';
 export default function ResultPage() {
     const searchParams = useSearchParams();
     const productLink = searchParams.get('productLink');
-    const commentCount = searchParams.get('commentCount');
+    const commentCountString = searchParams.get('commentCount');
+    const commentCount = commentCountString ? parseInt(commentCountString, 10) : 25;
     const pollutionLevel = searchParams.get('pollutionLevel');
     
     const [user, setUser] = useState<User | null>(null);
@@ -22,7 +23,7 @@ export default function ResultPage() {
     const [productID, setProductID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
     
     const MAX_COMMENTS_PER_PAGE = 50;
-    const totalPages = Math.ceil(parseInt(commentCount || '0', 10) / MAX_COMMENTS_PER_PAGE);
+    const totalPages = Math.ceil(commentCount / MAX_COMMENTS_PER_PAGE);
 
     const fetchCommentsForPage = async (page: number) => {
 
@@ -60,22 +61,40 @@ export default function ResultPage() {
                 const { comments: initialComments, productID: newProductID } = await fetchInitialComments({
                     user_id: currentUser.uid,
                     link: productLink || '',
-                    numRequestedComments: parseInt(commentCount || '50', 10),
+                    numRequestedComments: commentCount,
                     pollutionLevel: pollutionLevel || '',
                 });
 
                 // Update the state with initial comments and product ID
+                console.log("Initial Comments Fetched:", initialComments);
                 setComments(initialComments);
                 setProductID(newProductID);
-            } else { // If still more comments are needed, start polling
-                const remainingComments = await pollForRemainingComments(
-                    user? user.uid : "",
-                    productID,
-                    comments.length > 0 ? comments[comments.length - 1].timestamp : null
+
+                // start polling in the background without block (note: no await keyword)
+                pollForRemainingComments(
+                    currentUser? currentUser.uid : "",
+                    newProductID as string,
+                    initialComments.length > 0 ? initialComments[initialComments.length - 1].timestamp : null,
+                    5000, 20,
+                    (newComments) => {
+                        setComments(prevComments => [...prevComments, ...newComments]);
+                        console.log('UI Updated with comments:', newComments);
+                    }
                 );
-                // Append remaining comments to the state
-                setComments(prevComments => [...prevComments, ...remainingComments]);
-            }
+            } 
+            // else { // If still more comments are needed, start polling
+            //     const remainingComments = await pollForRemainingComments(
+            //         user? user.uid : "",
+            //         productID,
+            //         comments.length > 0 ? comments[comments.length - 1].timestamp : null,
+            //         5000, 20,
+            //         (newComments) => {
+            //             setComments(prevComments => [...prevComments, ...newComments]);
+            //             console.log('UI Updated with comments:', newComments);
+            //         }
+            //     );
+            //     console.log("Remaining Comments Fetched:", remainingComments);
+            // }
         } catch (error) {
             console.error('Failed to fetch comments for page:', error);
             setError('Failed to load comments');
@@ -104,16 +123,17 @@ export default function ResultPage() {
     };
 
 
-    if (loading && currentPage === 1) {
+    if (loading) { // && currentPage === 1) {
         return <div>Loading comments...</div>;
     } if (error) {
         return <div>Error: {error}</div>;
     }
 
     // Calculate the range of comments to display based on current page
-    const indexOfLastComment = currentPage * MAX_COMMENTS_PER_PAGE;
-    const indexOfFirstComment = indexOfLastComment - MAX_COMMENTS_PER_PAGE;
-    const currentComments = comments.slice(indexOfFirstComment, indexOfLastComment);
+    const indexFirstComment = (currentPage - 1) * MAX_COMMENTS_PER_PAGE;
+    const indexLastComment = indexFirstComment + ((currentPage == totalPages) ? 
+                                                (commentCount % MAX_COMMENTS_PER_PAGE) : MAX_COMMENTS_PER_PAGE); 
+    const commentsForCurrentPage = comments.slice(indexFirstComment, indexLastComment);
 
     return (
         // TODO: make CSS files
@@ -124,7 +144,7 @@ export default function ResultPage() {
             <p>Pollution Level: {pollutionLevel}</p>
 
             {/* TODO */}
-            <CommentList comments={currentComments} /> {/* Display the current subset of comments */}
+            <CommentList comments={commentsForCurrentPage} /> {/* Display the current subset of comments */}
 
             {/* TODO */}
             <Pagination 

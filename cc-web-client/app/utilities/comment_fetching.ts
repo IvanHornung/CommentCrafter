@@ -65,7 +65,7 @@ export async function fetchInitialComments({
     const comments = result.initial_comments || [];
     const productID = result.product_id || null;
 
-    console.log(`Successfully fetched initial ${Math.min(numRequestedComments, 50)} for product ${productID}: ${comments}`);
+    // console.log(`Successfully fetched initial ${Math.min(numRequestedComments, 50)} for product ${productID}: ${comments}`);
     return { comments, productID };
   } catch (error) {
     console.error("Error:", error);
@@ -78,7 +78,8 @@ export async function pollForRemainingComments(
   productId: string,
   lastCommentTimestamp: string | null,
   interval: number = 5000, // Polling interval in milliseconds
-  maxAttempts: number = 20 // Maximum number of polling attempts
+  maxAttempts: number = 20, // Maximum number of polling attempts
+  updateComments: (newComments: CommentData[]) => void // Callback to update comments
 ): Promise<CommentData[]> {
   
   console.log(`Polling for product ${productId}...`);
@@ -103,16 +104,18 @@ export async function pollForRemainingComments(
       const data: PollResponse = await response.json();
 
       if (data.status === "success" && data.new_comments.length > 0) {
-          allComments = allComments.concat(data.new_comments);
+        // Update the last comment timestamp to the latest one
+        lastCommentTimestamp = data.new_comments[data.new_comments.length - 1].timestamp;
+        console.log(`Successfully polled and retrieved ${data.new_comments.length} more comments from backend!`);
 
-          // Update the last comment timestamp to the latest one
-          lastCommentTimestamp = data.new_comments[data.new_comments.length - 1].timestamp;
-          console.log(`Successfully polled and retrieved ${data.new_comments.length} more comments from backend!`);
+        // Immediately update the state with new comments
+        updateComments(data.new_comments);
       } else {
-          // If no new comments are found, stop polling
-          shouldContinue = false;
-          console.log(`Retrieved no new comments from polling, polling stopped.`);
+        // If no new comments are found, stop polling
+        shouldContinue = false;
+        console.log(`Retrieved no new comments from polling, polling stopped.`);
       }
+
     } catch (error) {
         console.error("Error while polling for comments:", error, attempts);
         shouldContinue = false;

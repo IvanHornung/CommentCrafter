@@ -20,10 +20,10 @@ def canonicalize_url(link: str) -> str:
     f.fragment = ''
     return f.url
 
-def extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     user_id = data.get('user_id')
     product_link = canonicalize_url(data.get('link', ''))
-    num_requested_comments = data.get('numCommentsFirstPage', 50)
+    num_requested_comments = data.get('numRequestedComments', 50)
     pollution_level = data.get('pollutionLevel', 0)
 
     product_data = {
@@ -44,7 +44,7 @@ def extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         'product_data': product_data
     }
 
-def get_or_create_product(user_id: str, product_link: str, num_requested_comments: int, product_data: Dict[str, str]) -> Optional[firestore.DocumentReference]:
+def _get_or_create_product(user_id: str, product_link: str, num_requested_comments: int, product_data: Dict[str, str]) -> Optional[firestore.DocumentReference]:
     user_ref = db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
@@ -83,7 +83,7 @@ def get_or_create_product(user_id: str, product_link: str, num_requested_comment
 
     return product_ref
 
-def generate_initial_comments(product_ref: firestore.DocumentReference, num_initial_comments: int = 50) -> list[str]:
+def _generate_initial_comments(product_ref: firestore.DocumentReference, num_initial_comments: int = 50) -> list[str]:
     initial_comments = [f"Comment numba {i+1}" for i in range(num_initial_comments)]
     generated_comments_ref = product_ref.collection('generated_comments')
 
@@ -98,7 +98,7 @@ def generate_initial_comments(product_ref: firestore.DocumentReference, num_init
     return initial_comments
 
 # This function runs in a background thread to generate and store the remaining comments if the total requested count exceeds 50.
-def generate_remaining_comments(product_ref, total_comments, num_initial_comments):
+def _generate_remaining_comments(product_ref, total_comments, num_initial_comments):
     remaining_comments = total_comments - num_initial_comments
     comments = [f"Multithread ahh Comment numba {i + num_initial_comments + 1}" for i in range(remaining_comments)]
     
@@ -110,18 +110,18 @@ def generate_remaining_comments(product_ref, total_comments, num_initial_comment
             'offensivity_score': 0.1,  # Placeholder
             'timestamp': firestore.SERVER_TIMESTAMP
         })
-        time.sleep(0.2)
+        time.sleep(0.05)
 
 @gen_bp.route('/generate-comments', methods=['POST'])
 def generate_comments() -> Response:
     try:
         data = request.get_json()
-        validated_data = extract_and_validate_data(data)
+        validated_data = _extract_and_validate_data(data)
         
         if validated_data is None:
             return jsonify({"error": "Invalid input data."}), 400
 
-        product_ref = get_or_create_product(
+        product_ref = _get_or_create_product(
             validated_data['user_id'], 
             validated_data['product_link'], 
             validated_data['num_requested_comments'], 
@@ -131,18 +131,20 @@ def generate_comments() -> Response:
         if product_ref is None:
             return jsonify({"warning": "Duplicate request detected or user does not exist."}), 409
 
-        initial_comments = generate_initial_comments(product_ref)
+        initial_comments = _generate_initial_comments(product_ref)
         
         # multithread if necessary (more than 1 page of comments requested)
         if int(validated_data['num_requested_comments']) > 50:
             print("\t\tMore than 50 comments requested, kicking off multithread")
             executor = ThreadPoolExecutor(max_workers=1)
             executor.submit(
-                generate_remaining_comments, 
+                _generate_remaining_comments, 
                 product_ref, 
                 validated_data['num_requested_comments'], 
                 len(initial_comments)
             )
+        else:
+            print("\t\tLessthan 50 comments requested, no multithreading", validated_data['num_requested_comments'])
 
         return jsonify({"status": "success", "product_id": product_ref.id, "initial_comments": initial_comments}), 201
     
