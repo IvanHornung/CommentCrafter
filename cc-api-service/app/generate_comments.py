@@ -59,10 +59,10 @@ def _get_or_create_product(user_id: str, product_link: str, num_requested_commen
         last_updated = existing_product_query[0].get('last_updated')
 
         now = datetime.now(timezone.utc)
-        five_seconds_ago = now - timedelta(seconds=5)
-        five_seconds_later = now + timedelta(seconds=5)
+        delta_neg = now - timedelta(seconds=120)
+        delta_pos = now + timedelta(seconds=120)
         
-        if last_updated and five_seconds_ago <= last_updated <= five_seconds_later:
+        if last_updated and delta_neg <= last_updated <= delta_pos:
             return None
 
         product_ref.update({

@@ -57,6 +57,8 @@ export default function ResultPage() {
             if (!productID) {
                 console.log("ProductID not found, fetching initial comments...")
 
+                //TODO: fix bug where first 50 commenst are stored duplicately
+
                 // Fetch initial comments and product ID only if not already done
                 const { comments: initialComments, productID: newProductID } = await fetchInitialComments({
                     user_id: currentUser.uid,
@@ -67,7 +69,7 @@ export default function ResultPage() {
 
                 // Update the state with initial comments and product ID
                 console.log("Initial Comments Fetched:", initialComments);
-                setComments(initialComments);
+                // setComments(initialComments);
                 setProductID(newProductID);
 
                 // start polling in the background without block (note: no await keyword)
@@ -131,20 +133,25 @@ export default function ResultPage() {
 
     // Calculate the range of comments to display based on current page
     const indexFirstComment = (currentPage - 1) * MAX_COMMENTS_PER_PAGE;
-    const indexLastComment = indexFirstComment + ((currentPage == totalPages) ? 
-                                                (commentCount % MAX_COMMENTS_PER_PAGE) : MAX_COMMENTS_PER_PAGE); 
-    const commentsForCurrentPage = comments.slice(indexFirstComment, indexLastComment);
+    const indexLastComment = indexFirstComment + MAX_COMMENTS_PER_PAGE;
+    const commentsForCurrentPage = comments.length > 0 ? comments.slice(indexFirstComment, indexLastComment) : [];
+
+    console.log(`Loading UI with ${comments.length} comments locally stored...`);
 
     return (
         // TODO: make CSS files
         <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
-            <h1>Result Page</h1>
+            <h1>Result Page21</h1>
             <p>Product Link: <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a></p>
             <p>Number of Comments: {commentCount}</p>
             <p>Pollution Level: {pollutionLevel}</p>
 
-            {/* TODO */}
-            <CommentList comments={commentsForCurrentPage} /> {/* Display the current subset of comments */}
+            {/* Only display comments if they are available */}
+            {commentsForCurrentPage.length > 0 ? (
+                <CommentList comments={commentsForCurrentPage} />
+            ) : (
+                <div>Loading...</div>
+            )}
 
             {/* TODO */}
             <Pagination 
