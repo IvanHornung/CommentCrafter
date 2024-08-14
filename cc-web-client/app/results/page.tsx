@@ -133,7 +133,10 @@ export default function ResultPage() {
 
     // Calculate the range of comments to display based on current page
     const indexFirstComment = (currentPage - 1) * MAX_COMMENTS_PER_PAGE;
-    const indexLastComment = indexFirstComment + MAX_COMMENTS_PER_PAGE;
+    const indexLastComment = indexFirstComment + ((currentPage == totalPages) ? 
+        comments.length % MAX_COMMENTS_PER_PAGE || MAX_COMMENTS_PER_PAGE : 
+        MAX_COMMENTS_PER_PAGE
+    );
     const commentsForCurrentPage = comments.length > 0 ? comments.slice(indexFirstComment, indexLastComment) : [];
 
     console.log(`Loading UI with ${comments.length} comments locally stored...`);
@@ -141,7 +144,7 @@ export default function ResultPage() {
     return (
         // TODO: make CSS files
         <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
-            <h1>Result Page21</h1>
+            <h1>Result Page</h1>
             <p>Product Link: <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a></p>
             <p>Number of Comments: {commentCount}</p>
             <p>Pollution Level: {pollutionLevel}</p>
@@ -163,3 +166,19 @@ export default function ResultPage() {
         </div>
     );
 }
+
+/* Slicing test
+// Note: please restart the page if syntax highlighting works bad.
+let commentCount = 151
+let max_per = 50
+let total_pages = Math.ceil(commentCount/max_per)
+
+let current_page = 4
+
+let indexFirst = (current_page - 1) * max_per
+console.log()
+let output = (current_page == total_pages) ? indexFirst + (commentCount % max_per || max_per)
+: indexFirst + max_per
+
+console.log(output)
+*/
