@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from flask import Blueprint, Response, request, jsonify
 import threading
 from .auth import db
@@ -27,9 +27,25 @@ def canonicalize_url(link: str) -> str:
     f.fragment = ""
     return f.url
 
-def _update_generation_counts():
-    # update `user.total_generations`, `product.total_comments`, and `gen_request.num_comments_requested``
-    pass
+
+def _update_generation_counts(
+    user_ref: firestore.DocumentReference, 
+    product_ref: firestore.DocumentReference, 
+    gen_request_ref: firestore.DocumentReference
+) -> None:
+    user_ref.update({
+        "total_comment_generations": firestore.Increment(1),
+    })
+
+    product_ref.update({
+        "total_comments": firestore.Increment(1),
+        "last_updated": firestore.SERVER_TIMESTAMP
+    })
+
+    gen_request_ref.update({
+        "num_comments_generated": firestore.Increment(1),
+    })
+
 
 
 def _extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -73,7 +89,7 @@ def _get_or_create_product(
     product_link: str, 
     num_comments_requested: int, 
     product_data: Dict[str, str]
-) -> Optional[firestore.DocumentReference]:
+) -> Optional[Tuple[firestore.DocumentReference, firestore.DocumentReference]]:
     """
     Retrieves an existing product reference from Firestore or creates a new one if it does not exist.
 
@@ -89,7 +105,7 @@ def _get_or_create_product(
     :param product_data: A dictionary containing additional product information such as 
                          "url", "product_name", "description", and "est_price".
 
-    :return: a Firestore DocumentReference to the product if successful. If the user does 
+    :return: a Firestore DocumentReference to the user and product if successful. If the user does 
              not exist or the request is considered a duplicate, it returns None.
     """
     user_ref = db.collection("users").document(user_id)
@@ -131,7 +147,7 @@ def _get_or_create_product(
             "last_updated": firestore.SERVER_TIMESTAMP
         })
 
-    return product_ref
+    return user_ref, product_ref
 
 
 def _create_gen_request(
@@ -177,6 +193,8 @@ def _create_gen_request(
 
 # under construction
 def _generate_initial_comments(
+    user_ref: firestore.DocumentReference, 
+    product_ref: firestore.DocumentReference, 
     gen_request_ref: firestore.DocumentReference, 
     num_request_comments: int = 50
 ) -> list[str]:
@@ -200,7 +218,7 @@ def _generate_initial_comments(
     generated_comments_ref = gen_request_ref.collection("generated_comments")
 
     for comment in initial_comments:
-        #TODO method
+        _update_generation_counts(user_ref, product_ref, gen_request_ref)
         generated_comments_ref.add({
             "comment": comment,
             "relevancy_score": 0.5,  
@@ -212,6 +230,8 @@ def _generate_initial_comments(
 
 # under construction
 def _generate_remaining_comments(
+    user_ref: firestore.DocumentReference, 
+    product_ref: firestore.DocumentReference, 
     gen_request_ref: firestore.DocumentReference, 
     total_comments: int, 
     num_initial_comments: int
@@ -236,7 +256,7 @@ def _generate_remaining_comments(
     
     generated_comments_ref = gen_request_ref.collection("generated_comments")
     for comment in comments:
-        # TODO: add method for updating comments
+        _update_generation_counts(user_ref, product_ref, gen_request_ref)
         generated_comments_ref.add({
             "comment": comment,
             "relevancy_score": 0.5,  # Placeholder 
@@ -268,7 +288,7 @@ def generate_comments() -> Response:
         if validated_data is None:
             return jsonify({"error": "Invalid input data."}), 400
 
-        product_ref = _get_or_create_product(
+        user_ref, product_ref = _get_or_create_product(
             validated_data["user_id"], 
             validated_data["product_link"], 
             validated_data["num_comments_requested"], 
@@ -284,6 +304,7 @@ def generate_comments() -> Response:
         )
 
         initial_comments = _generate_initial_comments(
+            user_ref, product_ref, # necessary for updating purposes
             gen_request_ref,
             int(validated_data["num_comments_requested"])
         )
@@ -294,6 +315,7 @@ def generate_comments() -> Response:
             executor = ThreadPoolExecutor(max_workers=1)
             executor.submit(
                 _generate_remaining_comments, 
+                user_ref, product_ref,
                 gen_request_ref, 
                 int(validated_data["num_comments_requested"]), 
                 len(initial_comments)
@@ -368,7 +390,7 @@ def poll_comments() -> Response:
         ]
 
         total_comments = gen_request_doc.get("num_comments_generated")
-        
+
         print("\t\tDebuggg @poll endpoint", total_comments)
 
         return jsonify({

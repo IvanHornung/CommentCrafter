@@ -98,8 +98,10 @@ _commend_id_ stored as document because lists are generally inefficient with sca
 - `username` : string - represents readable identifier of the user account, which is the user's **email address** with Google auth.
     - named username in case I add any other authentication providers which don't represent the user's email
 - `pfp` : string - link to the image source URL of the user's profile picture (if any)
-- `total_generations` : int - indicates how many total comments the user generated
+- `total_comment_generations` : int - indicates how many total comments the user generated
     - can be verified with SUM(products.num_comments)
+- `total_generation_requests` : int - indicated how many requests the user has made
+    - can be verified with COUNT(products.gen_request)
 - `created_at` : Timestamp - indicated date and time when the use registered the account onto the CommentCrafter site
 - `last_login` : Timestamp - track when the user last visited the site for potential analytics purposes.
 - **`products`** : Subcollection - set of product documents the user produced
