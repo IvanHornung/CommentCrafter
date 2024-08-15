@@ -21,7 +21,9 @@ export default function ResultPage() {
     const [error, setError] = useState<string | null>(null); // manage errors
     const [currentPage, setCurrentPage] = useState(1); // manage current page (for pagination)
     const [productID, setProductID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
+    const [genRequestID, setGenRequestID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
     
+
     const MAX_COMMENTS_PER_PAGE = 50;
     const totalPages = Math.ceil(commentCount / MAX_COMMENTS_PER_PAGE);
 
@@ -60,7 +62,11 @@ export default function ResultPage() {
                 //TODO: fix bug where first 50 commenst are stored duplicately
 
                 // Fetch initial comments and product ID only if not already done
-                const { comments: initialComments, productID: newProductID } = await fetchInitialComments({
+                const {
+                    comments: initialComments,
+                    productID: newProductID,
+                    genRequestID: newGenRequestID
+                } = await fetchInitialComments({
                     user_id: currentUser.uid,
                     link: productLink || '',
                     numRequestedComments: commentCount,
@@ -71,11 +77,13 @@ export default function ResultPage() {
                 console.log("Initial Comments Fetched:", initialComments);
                 // setComments(initialComments);
                 setProductID(newProductID);
+                setGenRequestID(newGenRequestID);
 
                 // start polling in the background without block (note: no await keyword)
                 pollForRemainingComments(
                     currentUser? currentUser.uid : "",
                     newProductID as string,
+                    newGenRequestID as string,
                     initialComments.length > 0 ? initialComments[initialComments.length - 1].timestamp : null,
                     5000, 20,
                     (newComments) => {
@@ -84,19 +92,6 @@ export default function ResultPage() {
                     }
                 );
             } 
-            // else { // If still more comments are needed, start polling
-            //     const remainingComments = await pollForRemainingComments(
-            //         user? user.uid : "",
-            //         productID,
-            //         comments.length > 0 ? comments[comments.length - 1].timestamp : null,
-            //         5000, 20,
-            //         (newComments) => {
-            //             setComments(prevComments => [...prevComments, ...newComments]);
-            //             console.log('UI Updated with comments:', newComments);
-            //         }
-            //     );
-            //     console.log("Remaining Comments Fetched:", remainingComments);
-            // }
         } catch (error) {
             console.error('Failed to fetch comments for page:', error);
             setError('Failed to load comments');

@@ -33,7 +33,7 @@ export async function fetchInitialComments({
   link,
   numRequestedComments,
   pollutionLevel,
-}: FetchCommentsProps): Promise<{ comments: CommentData[]; productID: string | null }> {
+}: FetchCommentsProps): Promise<{ comments: CommentData[]; productID: string | null; genRequestID: string | null}> {
   console.log(`Fetching ${numRequestedComments} comments for user ${user_id} for link ${link} at pollution level ${pollutionLevel}...`);
 
   try {
@@ -64,9 +64,10 @@ export async function fetchInitialComments({
     // }
     const comments = result.initial_comments || [];
     const productID = result.product_id || null;
+    const genRequestID = result.gen_request_id || null;
 
     // console.log(`Successfully fetched initial ${Math.min(numRequestedComments, 50)} for product ${productID}: ${comments}`);
-    return { comments, productID };
+    return { comments, productID, genRequestID};
   } catch (error) {
     console.error("Error:", error);
     throw error;
@@ -76,13 +77,14 @@ export async function fetchInitialComments({
 export async function pollForRemainingComments(
   userId: string,
   productId: string,
+  genRequestId: string,
   lastCommentTimestamp: string | null,
   interval: number = 5000, // Polling interval in milliseconds
   maxAttempts: number = 20, // Maximum number of polling attempts
   updateComments: (newComments: CommentData[]) => void // Callback to update comments
 ): Promise<CommentData[]> {
   
-  console.log(`Polling for product ${productId}...`);
+  console.log(`Polling for product ${productId} Req #${genRequestId}...`);
   let allComments: CommentData[] = [];
   let attempts = 0;
   let shouldContinue = true;
@@ -92,6 +94,7 @@ export async function pollForRemainingComments(
       const url = new URL(`${config.api_url}/gen/poll-comments`);
       url.searchParams.append("user_id", userId);
       url.searchParams.append("product_id", productId);
+      url.searchParams.append("gen_request_id", genRequestId);
       if (lastCommentTimestamp)
         url.searchParams.append("last_comment_timestamp", lastCommentTimestamp)
 
@@ -114,6 +117,7 @@ export async function pollForRemainingComments(
         // If no new comments are found, stop polling
         shouldContinue = false;
         console.log(`Retrieved no new comments from polling, polling stopped.`);
+        // TODO: update status of gen_req
       }
 
     } catch (error) {
