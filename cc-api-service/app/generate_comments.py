@@ -181,7 +181,7 @@ def _create_gen_request(
         "num_comments_generated": 0,
         "status": status,
         "request_timestamp": firestore.SERVER_TIMESTAMP,
-        "model_version": "DevTest", # TODO: provide gemini version here
+        "model_version": "gemini-1.5-flash", # "DevTest", # TODO: provide gemini version here
         "num_exports": 0,
         **metadata
     }
