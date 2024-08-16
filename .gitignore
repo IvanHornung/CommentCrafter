@@ -1,3 +1,4 @@
 cc-api-service/config
 .venv
 __pycache__/
+cc-api-service/gemini_outputs
