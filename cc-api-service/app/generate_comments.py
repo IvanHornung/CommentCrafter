@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 from flask import Blueprint, Response, request, jsonify
 import threading
 from .auth import db
+from .gemini_api import generate_product_info, prompt_gemini_comment_gen
 from firebase_admin import firestore
 from furl import furl
 from datetime import datetime, timedelta, timezone
@@ -18,7 +19,6 @@ class Status(Enum):
     LOADING = 1
     COMPLETE_SUCCESS = 2
     COMPLETE_FAIL = 3
-
 
 # Convert URL that may have more than one possible representation into a stripped standard form
 def canonicalize_url(link: str) -> str:
@@ -65,12 +65,7 @@ def _extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]
     num_comments_requested = data.get("numRequestedComments", 50)
     pollution_level = data.get("pollutionLevel", 0)
 
-    product_data = {
-        "url": product_link,
-        "product_name": "Lounge Chairs",
-        "description": "Herman Miller, super expensive",
-        "est_price": "$5,595.00"
-    }
+    product_data = generate_product_info(product_link)
 
     if not user_id or not product_link:
         return None
@@ -135,8 +130,8 @@ def _get_or_create_product(
             "last_updated": firestore.SERVER_TIMESTAMP
         })
 
-    else:
-        product_ref = products_ref.document()  
+    else: # product does not exist yet, initialize data and generate name,desc,price
+        product_ref = products_ref.document()
         product_ref.set({
             "url": product_data["url"],
             "product_name": product_data["product_name"],

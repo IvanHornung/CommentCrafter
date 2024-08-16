@@ -1,26 +1,22 @@
+from typing import Any, Dict, Union
 import requests
 import os
 import json
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from google.generativeai.types import generation_types
 from datetime import datetime
-
-def write_to_file(prompt, response):
-  cleaned_response = response.text.strip("```json").strip("```").strip()
-
-  # Convert the cleaned response to a dictionary
-  try:
-      response_json = json.loads(cleaned_response)
-  except json.JSONDecodeError:
-      # If the response isn't JSON, you can keep it as a string
-      response_json = {"text": cleaned_response}
+from .auth import absolute_path
 
 
-  current_dir = os.path.dirname(os.path.abspath(__file__))
-  output_folder = os.path.join(current_dir, '..', 'gemini_outputs')
-  os.makedirs(output_folder, exist_ok=True)
-  
-  filename = f"output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+# TODO: remove this since itll be stored in firestore
+current_dir = os.path.dirname(os.path.abspath(__file__))
+output_folder = os.path.join(current_dir, '..', 'gemini_outputs')
+os.makedirs(output_folder, exist_ok=True)
+
+# TODO: delete
+def _write_to_file(prompt_type, prompt, response_json):
+  filename = f"{prompt_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
   filepath = os.path.join(output_folder, filename)
   output_data = {
     "prompt": prompt,
@@ -33,9 +29,17 @@ def write_to_file(prompt, response):
 
   print(f"Output saved to {filepath}")
 
+def _configure_gemini_api():
+  # Gemini configurations
+  config_path = os.path.join(absolute_path, 'config', 'gemini-api-key.json')
+  with open(config_path) as f:
+      config = json.load(f)
+  API_KEY = config['gemini_api_key']
 
-# Gemini configurations
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+  genai.configure(api_key=API_KEY)
+
+
+_configure_gemini_api()
 
 # Create the model
 generation_config = {
@@ -57,11 +61,8 @@ model = genai.GenerativeModel(
   } # See https://ai.google.dev/gemini-api/docs/safety-settings
 )
 
-chat_session = model.start_chat(
-  history=[]
-)
-
-prompt = """
+# prompt = \
+"""
 Given the following product information:
 {
   "link":	"https://store.hermanmiller.com/living-room-furniture-lounge-chairs-ottomans/eames-lounge-chair-and-ottoman/100198660.html",
@@ -86,6 +87,53 @@ Return a JSON object with the following defined
 - `offensivity_score`- a floating point mock score in the range [0,10] for how offensive is
 """
 
-response = chat_session.send_message(prompt)
-print(response.text)
-write_to_file(prompt, response)
+# response = chat_session.send_message(prompt)
+# print(response.text)
+# write_to_file(prompt, response)
+
+def _create_product_info_prompt(product_url):
+    return \
+f"""
+{product_url}
+
+Given the product link above, return a JSON object with the following defined
+- `url` - the URL just given to you
+- `product_name` - determine the name of the product in the link
+- `description` - generate a paragraph describing the product, limit to 200 characters
+- `est_price` - floating estimate the USD price the product is selling for
+
+If it appears the user did not enter a link to an e-commerce product, return default values of "INVALID" for all of the fields.
+"""
+    
+def _convert_to_json(response: generation_types.GenerateContentResponse):
+    cleaned_response = response.text.strip("```json").strip("```").strip()
+
+    # convert the cleaned response to a dictionary
+    try:
+        response_json = json.loads(cleaned_response)
+    except json.JSONDecodeError:
+      # TODO: consider what to do when response isnt JSON. this is a major halt
+      # If the response isn't JSON, keep it as a string
+      response_json = {"text": cleaned_response}
+
+    return response_json
+
+def generate_product_info(product_url: str):
+    """
+    Given a URL, infer the product name, price, and generate a short description.
+    """
+    prompt = _create_product_info_prompt(product_url)
+    chat_session = model.start_chat(history=[])
+
+    response = chat_session.send_message(prompt)
+    response_json = _convert_to_json(response)
+
+    _write_to_file("product_info", prompt, response_json)
+
+    return response_json
+
+
+def prompt_gemini_comment_gen(product_info, pollution_level, num_to_generate):
+    pass
+
+print(generate_product_info("https://store.hermanmiller.com/living-room-furniture-lounge-chairs-ottomans/eames-lounge-chair-and-ottoman/100198660.html"))
