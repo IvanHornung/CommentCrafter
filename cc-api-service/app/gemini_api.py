@@ -2,6 +2,37 @@ import requests
 import os
 import json
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from datetime import datetime
+
+def write_to_file(prompt, response):
+  cleaned_response = response.text.strip("```json").strip("```").strip()
+
+  # Convert the cleaned response to a dictionary
+  try:
+      response_json = json.loads(cleaned_response)
+  except json.JSONDecodeError:
+      # If the response isn't JSON, you can keep it as a string
+      response_json = {"text": cleaned_response}
+
+
+  current_dir = os.path.dirname(os.path.abspath(__file__))
+  output_folder = os.path.join(current_dir, '..', 'gemini_outputs')
+  os.makedirs(output_folder, exist_ok=True)
+  
+  filename = f"output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+  filepath = os.path.join(output_folder, filename)
+  output_data = {
+    "prompt": prompt,
+    "response": response_json
+  }
+
+  # Write the dictionary to the file
+  with open(filepath, 'w') as file:
+      json.dump(output_data, file, indent=4)
+
+  print(f"Output saved to {filepath}")
+
 
 # Gemini configurations
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
@@ -10,7 +41,7 @@ genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 generation_config = {
   "temperature": 2,
   "top_p": 0.95,
-  "top_k": 64,
+  "top_k": 128,
   "max_output_tokens": 8192,
   "response_mime_type": "text/plain",
 }
@@ -18,9 +49,12 @@ generation_config = {
 model = genai.GenerativeModel(
   model_name="gemini-1.5-flash",
   generation_config=generation_config,
-  # TODO: adjust safety settings for generating offensive content
-  # safety_settings = Adjust safety settings
-  # See https://ai.google.dev/gemini-api/docs/safety-settings
+  safety_settings= {
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+  } # See https://ai.google.dev/gemini-api/docs/safety-settings
 )
 
 chat_session = model.start_chat(
@@ -36,9 +70,15 @@ Given the following product information:
   "est_price": 8000
 }
 
-Generate 15 comments that are relevant and unproblematic, 3 that are offensive but still relevant, 5 that are irrelevant but not that offensive, and 2 that are offensive and irrelevant.
 
-Make them as realistic as possible — misspelling and imperfect punctuation is not common but not impossible
+Your task is to generate 25 "bad" comments simulating what real users would be saying for this product on this site -- but ones we'd want to filter.
+
+Given the data provided, generate:
+- 15 comments that are irrelevant to the product.
+- 10 comments that may be relevant but are very offensive (e.g. harassment, hate speech, sexually explicit, dangerous)
+- 5 comments that are both offensive and irrelevant to the product
+
+In the name of generating UGC data for classification models, them as realistic as possible — misspelling and imperfect punctuation is not common but still present
 
 Return a JSON object with the following defined
 - `comment` - the string text of the comment you generated
@@ -48,15 +88,4 @@ Return a JSON object with the following defined
 
 response = chat_session.send_message(prompt)
 print(response.text)
-
-# print(generate_content_with_gemini(prompt))
-
-
-'''Test
-/home/ivan/projects/CommentCrafter/.venv/bin/python /home/ivan/projects/CommentCrafter/cc-api-service/app/gemini_api.py
-
-curl \
-  -H 'Content-Type: application/json' \
-  -d '{"contents":[{"parts":[{"text":"Explain how AI works"}]}]}' \
-  -X POST 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=INSERT_KEY_HERE'
-'''
+write_to_file(prompt, response)
