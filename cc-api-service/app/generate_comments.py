@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 from flask import Blueprint, Response, request, jsonify
 import threading
 from .auth import db
-from .gemini_api import generate_product_info, prompt_gemini_comment_gen
+from .gemini_api import generate_product_info, generate_mock_comments
 from firebase_admin import firestore
 from furl import furl
 from datetime import datetime, timedelta, timezone
@@ -142,12 +142,17 @@ def _get_or_create_product(
             "last_updated": firestore.SERVER_TIMESTAMP
         })
 
+    user_ref.update({
+        "total_gen_requests": firestore.Increment(1)
+    })
+
     return user_ref, product_ref
 
 
 def _create_gen_request(
     product_ref: firestore.DocumentReference, 
     num_comments_requested: int, 
+    pollution_level: str = "Low",
     status: str = "LOADING", 
     metadata: Optional[Dict[str, Any]] = None
 ) -> firestore.DocumentReference:
@@ -174,6 +179,7 @@ def _create_gen_request(
         "request_id": gen_request_ref.id,
         "num_comments_requested": num_comments_requested,
         "num_comments_generated": 0,
+        "pollution_level": pollution_level.upper(),
         "status": status,
         "request_timestamp": firestore.SERVER_TIMESTAMP,
         "model_version": "gemini-1.5-flash", # "DevTest", # TODO: provide gemini version here
@@ -191,6 +197,8 @@ def _generate_initial_comments(
     user_ref: firestore.DocumentReference, 
     product_ref: firestore.DocumentReference, 
     gen_request_ref: firestore.DocumentReference, 
+    product_data: Dict[str, str],
+    pollution_level: str = "Low",
     num_request_comments: int = 50
 ) -> list[str]:
     """
@@ -206,21 +214,30 @@ def _generate_initial_comments(
 
     :return: A list of generated comment strings.
     """
-
-    num_initial_comments = min(50, num_request_comments)
-
-    initial_comments = [f"Comment numba {i+1}" for i in range(num_initial_comments)]
     generated_comments_ref = gen_request_ref.collection("generated_comments")
 
-    for comment in initial_comments:
-        _update_generation_counts(user_ref, product_ref, gen_request_ref)
-        generated_comments_ref.add({
-            "comment": comment,
-            "relevancy_score": 0.5,  
-            "offensivity_score": 0.1,  
-            "timestamp": firestore.SERVER_TIMESTAMP
-        })
+    num_initial_comments = min(50, num_request_comments)
     
+    try:
+        initial_comments = generate_mock_comments(
+            product_info_dict=product_data,
+            pollution_level=pollution_level,
+            num_to_generate=num_initial_comments
+        )
+
+        for comment_data in initial_comments:
+            _update_generation_counts(user_ref, product_ref, gen_request_ref)
+            generated_comments_ref.add({
+                "comment": comment_data["comment"],
+                "relevancy_score": float(comment_data["relevancy_score"]),  
+                "offensivity_score": float(comment_data["offensivity_score"]), 
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+
+    except Exception as e:
+        print("\t\tMAJOR ERROR @_generate_initial_comments", e)
+        return jsonify({"error": "An error occurred.", "message": str(e)}), 500   
+
     return initial_comments
 
 # under construction
@@ -295,17 +312,20 @@ def generate_comments() -> Response:
 
         gen_request_ref = _create_gen_request(
             product_ref,
-            int(validated_data["num_comments_requested"])
+            int(validated_data["num_comments_requested"]),
+            pollution_level=validated_data["pollution_level"]
         )
 
         initial_comments = _generate_initial_comments(
             user_ref, product_ref, # necessary for updating purposes
             gen_request_ref,
-            int(validated_data["num_comments_requested"])
+            pollution_level=validated_data["pollution_level"],
+            num_request_comments=int(validated_data["num_comments_requested"]),
+            product_data=validated_data["product_data"]
         )
         
         # multithread if necessary (more than 1 page of comments requested)
-        if int(validated_data["num_comments_requested"]) > 50:
+        '''if int(validated_data["num_comments_requested"]) > 50:
             print("\t\tMore than 50 comments requested, kicking off multithread")
             executor = ThreadPoolExecutor(max_workers=1)
             executor.submit(
@@ -317,11 +337,11 @@ def generate_comments() -> Response:
             )
         else:
             print("\t\tLessthan 50 comments requested, no multithreading", validated_data["num_comments_requested"])
-
+        '''
         return jsonify({"status": "success", "product_id": product_ref.id, "gen_request_id": gen_request_ref.id, "initial_comments": initial_comments}), 201
     
     except Exception as e:
-        print("\t\tMAJOR ERROR", e)
+        print("\t\t@generate_comments: MAJOR ERROR", e)
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
 
 

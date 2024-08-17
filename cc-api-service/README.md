@@ -3,10 +3,10 @@
 ```lisp
 users (collection)
 ├── user_id (document)
-│   ├── email: <string>
 │   ├── username: <string>
 │   ├── pfp: <string_url>
-│   ├── total_generations: <int>
+│   ├── total_comment_generations: <int>
+│   ├── total_gen_requests: <int>
 │   ├── created_at: <timestamp>
 │   ├── last_login: <timestamp>
 │   └── products (subcollection)
@@ -14,7 +14,7 @@ users (collection)
 │       │   ├── url: <string_url>
 │       │   ├── product_name: <string>
 │       │   ├── description: <string>
-│       │   ├── total_comments: <int>
+│       │   ├── total_comment_generations: <int>
 │       │   ├── total_gen_requests: <int>
 │       │   ├── est_price: <double>
 │       │   ├── last_updated: <timestamp>
@@ -23,6 +23,7 @@ users (collection)
 │       │       │   ├── request_id: <string>
 │       │       │   ├── num_comments_requested: <int>
 │       │       │   ├── num_comments_generated: <int>
+│       │       │   ├── pollution_level: <string>
 │       │       │   ├── num_exports: <int>
 │       │       │   ├── status: <string-enum>
 │       │       │   ├── request_timestamp: <timestamp>
@@ -47,7 +48,8 @@ _commend_id_ stored as document because lists are generally inefficient with sca
       "email": "user1@example.com",
       "username": "user1",
       "pfp": "profile_picture_url_1",
-      "total_generations": 100,
+      "total_comment_generations": 100,
+      "total_gen_requests": 1,
       "created_at": "2024-01-01T00:00:00Z",
       "last_login": "2024-08-07T14:56:00Z",
       "products": {
@@ -63,6 +65,7 @@ _commend_id_ stored as document because lists are generally inefficient with sca
               "request_id": "requestID1",
               "num_comments_requested": 10,
               "num_comments_generated": 10,
+              "pollution_level": "HIGH",
               "num_exports": 1,
               "status": "Complete",
               "request_timestamp": "2024-08-07T12:00:00Z",
@@ -123,6 +126,7 @@ _commend_id_ stored as document because lists are generally inefficient with sca
 - `request_id` : string - unique identifier for gen_request, redundancy
 - `num_comments_requested` : int - total amount of comments requested for this specific query
 - `num_comments_generated` : int - total amount of comments generated for this specific query (for redundancy and assigning status value)
+- `pollution_level` : string-enum - requested pollution level for the data ("LOW", "MODERATE", "HIGH")
 - `status` : string-enum - current status of the request (e.g. Loading, Complete, Failed)
 - `request_timestamp` : Timestamp - the timestamp at which the user made this request
 - `completion_timestamp` : Timestamp - the timestamp at which the request was completed (for analytics and optimization purposes)

@@ -1,3 +1,4 @@
+from math import ceil
 from typing import Any, Dict, Union
 import requests
 import os
@@ -87,9 +88,7 @@ Return a JSON object with the following defined
 - `offensivity_score`- a floating point mock score in the range [0,10] for how offensive is
 """
 
-# response = chat_session.send_message(prompt)
-# print(response.text)
-# write_to_file(prompt, response)
+
 
 def _create_product_info_prompt(product_url):
     return \
@@ -105,16 +104,70 @@ Given the product link above, return a JSON object with the following defined
 If it appears the user did not enter a link to an e-commerce product, return default values of "INVALID" for all of the fields.
 """
     
-def _convert_to_json(response: generation_types.GenerateContentResponse):
-    cleaned_response = response.text.strip("```json").strip("```").strip()
 
-    # convert the cleaned response to a dictionary
+
+
+def _create_comment_generation_prompt(
+    pollution_level: str,
+    num_comments_requested: int, 
+    product_info_dict,
+):
+    pollution_map = {
+      "LOW": 0.2,
+      "MODERATE": 0.4,
+      "HIGH": 0.8
+    }
+    
+    # map str.upper to percentage
+    percent_polluted = pollution_map[pollution_level.upper()]
+
+    # apply percentage to comments requested
+    num_polluted = ceil(num_comments_requested * percent_polluted)
+    sub_pollution_distr = num_polluted/3
+
+    num_clean = num_comments_requested - num_polluted
+
+
+    # TODO: provide a few example comments if needs more fine-tuning
+    return \
+f"""
+Given the following product information
+{json.dumps(product_info_dict, indent=4)}
+
+Generate {num_clean} "good" comments that are relevant and unproblematic
+
+Then, generate {num_polluted} "bad" comments simulating real users would be saying for this product on this site -- but ones we want to filter out.
+- {int(ceil(sub_pollution_distr))} comments that are irrelevant to the product
+- {int(sub_pollution_distr)} comments that may be relevant to the product but are very offensive 
+- {int(sub_pollution_distr)} comments that are both irrelevant and offensive to the product
+
+Ensure comments appear as if written by different users with varied styles, tones, and levels of knowledge. Include minor grammar and spelling errors here and there. 
+Limit the use of exclamation marks and other emphasis characters, and keep in mind only some 40% of comments end with periods online. 
+
+For the offensive comments, make them very offensive (e.g. harassment, hate speech, sexually explicit, dangerous)
+
+Return a JSON object with:
+- `comment`: The string text of the comment.
+- `relevancy_score`: A floating point score between [0,10] for how relevant the comment is given the product data.
+- `offensivity_score`: A floating point score between [0,10] for how offensive the comment is.
+"""
+
+
+def _convert_to_json(response: generation_types.GenerateContentResponse):
+    # Start by cleaning the response text to remove any potential Markdown code blocks
+    cleaned_response = response.text.strip()
+    
+    # Handle multiple potential JSON outputs
+    if cleaned_response.startswith("```json"):
+        # Remove the leading and trailing Markdown code block
+        cleaned_response = cleaned_response.strip("```json").strip("```").strip()
+
     try:
         response_json = json.loads(cleaned_response)
-    except json.JSONDecodeError:
-      # TODO: consider what to do when response isnt JSON. this is a major halt
-      # If the response isn't JSON, keep it as a string
-      response_json = {"text": cleaned_response}
+    except json.JSONDecodeError as e:
+        # If the response isn't JSON, print the error and keep it as a string
+        print(f"\t\tAlert: JSON object not found - {e}")
+        response_json = {"text": cleaned_response}
 
     return response_json
 
@@ -133,7 +186,23 @@ def generate_product_info(product_url: str):
     return response_json
 
 
-def prompt_gemini_comment_gen(product_info, pollution_level, num_to_generate):
-    pass
+def generate_mock_comments(product_info_dict, pollution_level, num_to_generate):
+    """
+    Given the product info previously genererated, the requested pollution level, and the number of comments
+    the user wishes to generated, return the list of mock UGC comments with relevancy and offensivity scores.
+    """
+    prompt = _create_comment_generation_prompt(
+      pollution_level=pollution_level,
+      product_info_dict=product_info_dict,
+      num_comments_requested=num_to_generate
+    )
 
-print(generate_product_info("https://store.hermanmiller.com/living-room-furniture-lounge-chairs-ottomans/eames-lounge-chair-and-ottoman/100198660.html"))
+    chat_session = model.start_chat(history=[])
+
+    response = chat_session.send_message(prompt)
+    response_json = _convert_to_json(response)
+
+    _write_to_file("mock_comments", prompt, response_json)
+
+    return response_json
+

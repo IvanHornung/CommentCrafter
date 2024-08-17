@@ -56,12 +56,6 @@ export async function fetchInitialComments({
 
     const result = await response.json();
 
-    // Assuming the backend returns a structure like:
-    // {
-    //   status: "success",
-    //   product_id: "some-product-id",
-    //   initial_comments: ["Comment 1", "Comment 2", ...]
-    // }
     const comments = result.initial_comments || [];
     const productID = result.product_id || null;
     const genRequestID = result.gen_request_id || null;

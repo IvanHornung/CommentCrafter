@@ -81,7 +81,7 @@ export default function ResultPage() {
 
                 // start polling in the background without block (note: no await keyword)
                 pollForRemainingComments(
-                    currentUser? currentUser.uid : "",
+                    currentUser ? currentUser.uid : "",
                     newProductID as string,
                     newGenRequestID as string,
                     initialComments.length > 0 ? initialComments[initialComments.length - 1].timestamp : null,
@@ -127,6 +127,7 @@ export default function ResultPage() {
     }
 
     // Calculate the range of comments to display based on current page
+    // TODO: refactor this into its own method for readability
     const indexFirstComment = (currentPage - 1) * MAX_COMMENTS_PER_PAGE;
     const indexLastComment = indexFirstComment + ((currentPage == totalPages) ? 
         comments.length % MAX_COMMENTS_PER_PAGE || MAX_COMMENTS_PER_PAGE : 
@@ -151,7 +152,6 @@ export default function ResultPage() {
                 <div>Loading...</div>
             )}
 
-            {/* TODO */}
             <Pagination 
                 currentPage={currentPage} 
                 totalPages={totalPages} 
@@ -161,19 +161,3 @@ export default function ResultPage() {
         </div>
     );
 }
-
-/* Slicing test
-// Note: please restart the page if syntax highlighting works bad.
-let commentCount = 151
-let max_per = 50
-let total_pages = Math.ceil(commentCount/max_per)
-
-let current_page = 4
-
-let indexFirst = (current_page - 1) * max_per
-console.log()
-let output = (current_page == total_pages) ? indexFirst + (commentCount % max_per || max_per)
-: indexFirst + max_per
-
-console.log(output)
-*/
