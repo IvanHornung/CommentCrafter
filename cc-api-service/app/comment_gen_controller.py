@@ -1,24 +1,20 @@
 import datetime
+from math import ceil
 from typing import Any, Dict, Optional, Tuple
 from flask import Blueprint, Response, request, jsonify
 import threading
 from .auth import db
-from .gemini_api import generate_product_info, generate_mock_comments
+from .gemini_service import generate_product_info
 from firebase_admin import firestore
 from furl import furl
 from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
-from concurrent.futures import ThreadPoolExecutor
-import time
-from enum import Enum
+from .comment_gen_parallelizer import parallelize_comment_tasks
+from .data_modules import Status
 
 
 gen_bp = Blueprint("gen", __name__)
 
-class Status(Enum):
-    LOADING = 1
-    COMPLETE_SUCCESS = 2
-    COMPLETE_FAIL = 3
 
 # Convert URL that may have more than one possible representation into a stripped standard form
 def canonicalize_url(link: str) -> str:
@@ -26,26 +22,6 @@ def canonicalize_url(link: str) -> str:
     f.args = {}
     f.fragment = ""
     return f.url
-
-
-def _update_generation_counts(
-    user_ref: firestore.DocumentReference, 
-    product_ref: firestore.DocumentReference, 
-    gen_request_ref: firestore.DocumentReference
-) -> None:
-    user_ref.update({
-        "total_comment_generations": firestore.Increment(1),
-    })
-
-    product_ref.update({
-        "total_comments": firestore.Increment(1),
-        "last_updated": firestore.SERVER_TIMESTAMP
-    })
-
-    gen_request_ref.update({
-        "num_comments_generated": firestore.Increment(1),
-    })
-
 
 
 def _extract_and_validate_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -153,7 +129,7 @@ def _create_gen_request(
     product_ref: firestore.DocumentReference, 
     num_comments_requested: int, 
     pollution_level: str = "Low",
-    status: str = "LOADING", 
+    status: Status = Status.RECEIVED_REQUEST, 
     metadata: Optional[Dict[str, Any]] = None
 ) -> firestore.DocumentReference:
     """
@@ -180,7 +156,7 @@ def _create_gen_request(
         "num_comments_requested": num_comments_requested,
         "num_comments_generated": 0,
         "pollution_level": pollution_level.upper(),
-        "status": status,
+        "status": status.value,
         "request_timestamp": firestore.SERVER_TIMESTAMP,
         "model_version": "gemini-1.5-flash", # "DevTest", # TODO: provide gemini version here
         "num_exports": 0,
@@ -192,91 +168,6 @@ def _create_gen_request(
     return gen_request_ref
 
 
-# under construction
-def _generate_initial_comments(
-    user_ref: firestore.DocumentReference, 
-    product_ref: firestore.DocumentReference, 
-    gen_request_ref: firestore.DocumentReference, 
-    product_data: Dict[str, str],
-    pollution_level: str = "Low",
-    num_request_comments: int = 50
-) -> list[str]:
-    """
-    Generates an initial set of comments and stores them in Firestore.
-
-    This function creates a specified number of initial comments for a product and stores 
-    them in the `generated_comments` subcollection of the provided Firestore document 
-    reference. Each comment is accompanied by placeholder relevancy and offensivity scores.
-
-    :param product_ref: A Firestore DocumentReference pointing to the product for which 
-                        comments are being generated.
-    :param num_initial_comments: The number of comments to generate and store. Defaults to 50.
-
-    :return: A list of generated comment strings.
-    """
-    generated_comments_ref = gen_request_ref.collection("generated_comments")
-
-    num_initial_comments = min(50, num_request_comments)
-    
-    try:
-        initial_comments = generate_mock_comments(
-            product_info_dict=product_data,
-            pollution_level=pollution_level,
-            num_to_generate=num_initial_comments
-        )
-
-        for comment_data in initial_comments:
-            _update_generation_counts(user_ref, product_ref, gen_request_ref)
-            generated_comments_ref.add({
-                "comment": comment_data["comment"],
-                "relevancy_score": float(comment_data["relevancy_score"]),  
-                "offensivity_score": float(comment_data["offensivity_score"]), 
-                "timestamp": firestore.SERVER_TIMESTAMP
-            })
-
-    except Exception as e:
-        print("\t\tMAJOR ERROR @_generate_initial_comments", e)
-        return jsonify({"error": "An error occurred.", "message": str(e)}), 500   
-
-    return initial_comments
-
-# under construction
-def _generate_remaining_comments(
-    user_ref: firestore.DocumentReference, 
-    product_ref: firestore.DocumentReference, 
-    gen_request_ref: firestore.DocumentReference, 
-    total_comments: int, 
-    num_initial_comments: int
-) -> None:
-    """
-    Generates and stores the remaining comments in Firestore after the initial batch.
-
-    This function generates the remaining comments beyond the initial set and stores them 
-    in the `generated_comments` subcollection of the provided Firestore document reference. 
-    Each comment is accompanied by placeholder relevancy and offensivity scores. The function 
-    pauses briefly between storing each comment to simulate a more realistic generation process.
-
-    :param product_ref: A Firestore DocumentReference pointing to the product for which 
-                        comments are being generated.
-    :param total_comments: The total number of comments that were requested for the product.
-    :param num_initial_comments: The number of comments that were initially generated.
-
-    :return: None. This function performs its operations and does not return a value.
-    """
-    remaining_comments = total_comments - num_initial_comments
-    comments = [f"Multithread ahh Comment numba {i + num_initial_comments + 1}" for i in range(remaining_comments)]
-    
-    generated_comments_ref = gen_request_ref.collection("generated_comments")
-    for comment in comments:
-        _update_generation_counts(user_ref, product_ref, gen_request_ref)
-        generated_comments_ref.add({
-            "comment": comment,
-            "relevancy_score": 0.5,  # Placeholder 
-            "offensivity_score": 0.1,  # Placeholder
-            "timestamp": firestore.SERVER_TIMESTAMP
-        })
-        time.sleep(0.05)
-
 
 # TODO: refactor - return (product_id, request_id) tuple instead
 @gen_bp.route("/generate-comments", methods=["POST"])
@@ -286,12 +177,10 @@ def generate_comments() -> Response:
 
     This endpoint processes a request to generate comments for a specified product. It 
     validates the input data, retrieves or creates the associated product in Firestore, 
-    generates an initial batch of comments, and if necessary, initiates a background 
-    process to generate additional comments.
+    generates an initial batch of comments, and to generate additional comments.
 
-    :return: A JSON response containing the status of the request, the product ID, gen_request ID, and the 
-             initial set of generated comments. Returns an appropriate error message and 
-             status code if the request fails.
+    :return: A JSON response containing the status of the request, the product ID, and gen_request ID. 
+            Returns an appropriate error message and status code if the request fails.
     """
     try:
         data = request.get_json()
@@ -316,30 +205,26 @@ def generate_comments() -> Response:
             pollution_level=validated_data["pollution_level"]
         )
 
-        initial_comments = _generate_initial_comments(
-            user_ref, product_ref, # necessary for updating purposes
-            gen_request_ref,
-            pollution_level=validated_data["pollution_level"],
-            num_request_comments=int(validated_data["num_comments_requested"]),
-            product_data=validated_data["product_data"]
-        )
-        
-        # multithread if necessary (more than 1 page of comments requested)
-        '''if int(validated_data["num_comments_requested"]) > 50:
-            print("\t\tMore than 50 comments requested, kicking off multithread")
-            executor = ThreadPoolExecutor(max_workers=1)
-            executor.submit(
-                _generate_remaining_comments, 
-                user_ref, product_ref,
-                gen_request_ref, 
-                int(validated_data["num_comments_requested"]), 
-                len(initial_comments)
+        # kick off multithreaded comment generation
+        thread = threading.Thread(
+            target=parallelize_comment_tasks,
+            args=(
+                (user_ref, product_ref, gen_request_ref),
+                int(validated_data["num_comments_requested"]),
+                validated_data["product_data"],
+                validated_data["pollution_level"]
             )
-        else:
-            print("\t\tLessthan 50 comments requested, no multithreading", validated_data["num_comments_requested"])
-        '''
-        return jsonify({"status": "success", "product_id": product_ref.id, "gen_request_id": gen_request_ref.id, "initial_comments": initial_comments}), 201
-    
+        )
+        print("\tpre")
+        thread.start() # kick off multithread in a background process and return request/product information
+        print("\tpost")
+
+
+        return jsonify({
+            "status": "success", 
+            "product_id": product_ref.id, 
+            "gen_request_id": gen_request_ref.id}), 201
+
     except Exception as e:
         print("\t\t@generate_comments: MAJOR ERROR", e)
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
@@ -397,16 +282,14 @@ def poll_comments() -> Response:
         new_comments = [
             {
                 "comment": doc.get("comment"),
-                "relevancy_score": doc.get("relevancy_score"),
-                "offensivity_score": doc.get("offensivity_score"),
+                "relevancy_score": float(doc.get("relevancy_score")),
+                "offensivity_score": float(doc.get("offensivity_score")),
                 "timestamp": doc.get("timestamp").isoformat()
             }
             for doc in new_comments_docs
         ]
 
         total_comments = gen_request_doc.get("num_comments_generated")
-
-        print("\t\tDebuggg @poll endpoint", total_comments)
 
         return jsonify({
             "status": "success",

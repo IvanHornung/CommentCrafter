@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CommentData, fetchInitialComments, pollForRemainingComments } from '../utilities/comment_fetching';
+import { CommentData, triggerCommentsGen, pollForRemainingComments } from '../utilities/comment_fetching';
 import CommentList from './components/comment-list';
 import Pagination from './components/pagination';
 import { User } from "firebase/auth";
@@ -56,26 +56,21 @@ export default function ResultPage() {
                 return;
             }
 
-            if (!productID) {
-                console.log("ProductID not found, fetching initial comments...")
-
-                //TODO: fix bug where first 50 commenst are stored duplicately
+            if (!productID) { // if productID state var isn't stored, we need to instantiate it and trigger comment_Gen
+                console.log("Triggering comment generation...")
 
                 // Fetch initial comments and product ID only if not already done
                 const {
                     comments: initialComments,
                     productID: newProductID,
                     genRequestID: newGenRequestID
-                } = await fetchInitialComments({
+                } = await triggerCommentsGen({
                     user_id: currentUser.uid,
                     link: productLink || '',
                     numRequestedComments: commentCount,
                     pollutionLevel: pollutionLevel || '',
                 });
 
-                // Update the state with initial comments and product ID
-                console.log("Initial Comments Fetched:", initialComments);
-                // setComments(initialComments);
                 setProductID(newProductID);
                 setGenRequestID(newGenRequestID);
 

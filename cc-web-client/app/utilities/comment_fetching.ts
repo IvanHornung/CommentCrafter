@@ -28,7 +28,7 @@ export interface PollResponse {
  * @param {number} numCommentsFirstPage - The number of comments per page.
  * @param {string} pollutionLevel - The pollution level.
  */
-export async function fetchInitialComments({
+export async function triggerCommentsGen({
   user_id,
   link,
   numRequestedComments,

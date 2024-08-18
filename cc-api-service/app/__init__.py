@@ -4,11 +4,17 @@ This module initializes the Flask application
 - Sets up the overall structure of the application.
 """
 
+from enum import Enum
 from flask import Flask
 from .auth import auth_bp
-from .generate_comments import gen_bp
+from .comment_gen_controller import gen_bp
 from flask_cors import CORS
 
+class Status(Enum):
+    LOADING = "LOADING"
+    PRELIM_SUCCESS = "PRELIM_SUCCESS"
+    COMPLETE_SUCCESS = "COMPLETE_SUCCESS"
+    COMPLETE_FAIL = "COMPLETE_FAIL"
 
 def create_app() -> Flask:
     app = Flask(__name__)
