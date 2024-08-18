@@ -17,7 +17,7 @@ from typing import Dict, List, Tuple
 
 from flask import jsonify
 from .gemini_service import generate_mock_comments
-from .data_modules import Status
+from .data_modules import Status, print_error, print_info
 from firebase_admin import firestore
 import random
 
@@ -87,10 +87,14 @@ def _process_worker_batches(
     try:
         for batch_load in worker_batches:
             # generate the comments
+                print_info("Generating mock comments...")
+
                 comments_batch = generate_mock_comments(
                     product_info_dict=product_data,
                     pollution_level=pollution_level,
-                    num_to_generate=batch_load)
+                    num_to_generate=batch_load)["comments"]
+                
+                print_info(f"{type(comments_batch)}\t{comments_batch}")
 
                 # jumble the comments
                 random.shuffle(comments_batch)
@@ -105,7 +109,9 @@ def _process_worker_batches(
                         "timestamp": firestore.SERVER_TIMESTAMP})       
                          
     except Exception as e:
-        print("\t\tMAJOR ERROR @_generate_initial_comments", e)
+        print_error("@_process_workerbatches", e)
+        print_error(f"Type of exception: {type(e)}")
+        print_error(f"Exception arguments:{e.args}")
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500  
 
 def parallelize_comment_tasks(

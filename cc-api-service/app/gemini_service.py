@@ -16,18 +16,18 @@ os.makedirs(output_folder, exist_ok=True)
 
 # TODO: delete before deployment
 def _log_response_to_file(prompt_type, prompt, response_json):
-  filename = f"{prompt_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-  filepath = os.path.join(output_folder, filename)
-  output_data = {
-    "prompt": prompt,
-    "response": response_json
-  }
+    filename = f"{prompt_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = os.path.join(output_folder, filename)
+    output_data = {
+      "prompt": prompt,
+      "response": response_json
+    }
 
-  # Write the dictionary to the file
-  with open(filepath, 'w') as file:
-      json.dump(output_data, file, indent=4)
+    # Write the dictionary to the file
+    with open(filepath, 'w') as file:
+        json.dump(output_data, file, indent=4)
 
-  print(f"Output saved to {filepath}")
+    print(f"Output saved to {filepath}")
 
 def _configure_gemini_api():
   # Gemini configurations
@@ -47,7 +47,7 @@ generation_config = {
   "top_p": 0.95,
   "top_k": 128,
   "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
+  "response_mime_type": "application/json",
 }
 
 print("Instantiating model...")
@@ -117,7 +117,7 @@ Limit the use of exclamation marks and other emphasis characters, and keep in mi
 
 For the offensive comments, make them very offensive (e.g. harassment, hate speech, sexually explicit, dangerous)
 
-Return a JSON object with:
+Return a JSON object "comments" mapped to a list of objects with the following fields:
 - `comment`: The string text of the comment.
 - `relevancy_score`: A floating point score between [0,10] for how relevant the comment is given the product data.
 - `offensivity_score`: A floating point score between [0,10] for how offensive the comment is.

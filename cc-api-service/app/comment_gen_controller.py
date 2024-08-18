@@ -215,9 +215,8 @@ def generate_comments() -> Response:
                 validated_data["pollution_level"]
             )
         )
-        print("\tpre")
+
         thread.start() # kick off multithread in a background process and return request/product information
-        print("\tpost")
 
 
         return jsonify({
