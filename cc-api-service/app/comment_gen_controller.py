@@ -158,7 +158,7 @@ def _create_gen_request(
         "pollution_level": pollution_level.upper(),
         "status": status.value,
         "request_timestamp": firestore.SERVER_TIMESTAMP,
-        "model_version": "gemini-1.5-flash", # "DevTest", # TODO: provide gemini version here
+        "model_version": "gemini-1.5-flash",
         "num_exports": 0,
         **metadata
     }
@@ -169,7 +169,6 @@ def _create_gen_request(
 
 
 
-# TODO: refactor - return (product_id, request_id) tuple instead
 @gen_bp.route("/generate-comments", methods=["POST"])
 def generate_comments() -> Response:
     """
@@ -289,9 +288,10 @@ def poll_comments() -> Response:
         ]
 
         total_comments = gen_request_doc.get("num_comments_generated")
+        status = gen_request_doc.get("status")
 
         return jsonify({
-            "status": "success",
+            "status": status,
             "new_comments": new_comments,
             "total_comments": total_comments
         }), 200

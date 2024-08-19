@@ -80,10 +80,10 @@ export async function pollForRemainingComments(
   
   console.log(`Polling for product ${productId} Req #${genRequestId}...`);
   let allComments: CommentData[] = [];
-  let attempts = 0;
+  // let attempts = 0;
   let shouldContinue = true;
 
-  while (shouldContinue && attempts < maxAttempts) {
+  while (shouldContinue) {// && attempts < maxAttempts) {
     try {
       const url = new URL(`${config.api_url}/gen/poll-comments`);
       url.searchParams.append("user_id", userId);
@@ -100,26 +100,26 @@ export async function pollForRemainingComments(
 
       const data: PollResponse = await response.json();
 
-      if (data.status === "success" && data.new_comments.length > 0) {
+      if (data.new_comments.length > 0) {
         // Update the last comment timestamp to the latest one
         lastCommentTimestamp = data.new_comments[data.new_comments.length - 1].timestamp;
         console.log(`Successfully polled and retrieved ${data.new_comments.length} more comments from backend!`);
 
         // Immediately update the state with new comments
         updateComments(data.new_comments);
-      } else {
-        // If no new comments are found, stop polling
+      } 
+      if(data.status === "PRELIM_SUCCESS") { 
+        // Stop polling if process finished
         shouldContinue = false;
-        console.log(`Retrieved no new comments from polling, polling stopped.`);
-        // TODO: update status of gen_req
+        console.log(`Process has reached preliminary success, polling stopped.`);
       }
 
     } catch (error) {
-        console.error("Error while polling for comments:", error, attempts);
+        console.error("Error while polling for comments:", error);//, attempts);
         shouldContinue = false;
     }
 
-    attempts += 1;
+    // attempts += 1;
 
     if (shouldContinue) {
         // Wait for the specified interval before polling again
@@ -127,6 +127,7 @@ export async function pollForRemainingComments(
     }
   }
 
+  // TODO: implement post-prelim success logic
   return allComments;
 }
 

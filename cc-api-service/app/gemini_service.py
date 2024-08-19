@@ -72,7 +72,7 @@ Given the product link above, return a JSON object with the following defined
 - `url` - the URL just given to you
 - `product_name` - determine the name of the product in the link
 - `description` - generate a paragraph describing the product, limit to 200 characters
-- `est_price` - floating estimate the USD price the product is selling for
+- `est_price` - floating point USD price the product is selling for given the page data
 
 If it appears the user did not enter a link to an e-commerce product, return default values of "INVALID" for all of the fields.
 """

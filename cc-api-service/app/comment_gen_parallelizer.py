@@ -94,7 +94,7 @@ def _process_worker_batches(
                     pollution_level=pollution_level,
                     num_to_generate=batch_load)["comments"]
                 
-                print_info(f"{type(comments_batch)}\t{comments_batch}")
+                # print_info(f"{type(comments_batch)}\t{comments_batch}")
 
                 # jumble the comments
                 random.shuffle(comments_batch)
@@ -136,6 +136,5 @@ def parallelize_comment_tasks(
                 pollution_level
             )
     
-
     gen_request_ref.update({"status": Status.PRELIM_SUCCESS.value})
 
