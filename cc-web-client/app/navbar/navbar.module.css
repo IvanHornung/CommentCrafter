@@ -5,3 +5,8 @@
     padding: 1em;
   }
   
+
+.rightButtons {
+  display: flex;
+  gap: 10px; /* Adjust the gap between buttons if needed */
+}

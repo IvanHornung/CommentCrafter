@@ -1,0 +1,17 @@
+.generationHistoryButton {
+    background-color: #898989;
+    color: white;
+    padding: 12px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+  
+.generationHistoryButton:hover {
+    background-color: var(--deep-sky-blue);;
+    border: 1px solid transparent;
+}
+  

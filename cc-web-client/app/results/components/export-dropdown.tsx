@@ -7,9 +7,11 @@ interface ExportDropdownProps {
     onExport: (format: string) => void;
     comments: CommentData[];
     productLink: string | null;
+    productName: string | undefined;
+    productDescription: string | undefined;
 }
 
-export default function ExportDropdown({ onExport, comments, productLink }: ExportDropdownProps) {
+export default function ExportDropdown({ onExport, comments, productLink, productName, productDescription }: ExportDropdownProps) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const toggleDropdown = () => {
@@ -21,13 +23,13 @@ export default function ExportDropdown({ onExport, comments, productLink }: Expo
 
         switch (format) {
             case 'JSON':
-                downloadJSON(comments, decodeURIComponent(productLink || ''));
+                downloadJSON(comments, decodeURIComponent(productLink || ''), productName || '', productDescription || '');
                 break;
             case 'XML':
-                downloadXML(comments, decodeURIComponent(productLink || ''));
+                downloadXML(comments, decodeURIComponent(productLink || ''), productName || '', productDescription || '');
                 break;
             case 'CSV':
-                downloadCSV(comments, decodeURIComponent(productLink || ''));
+                downloadCSV(comments, decodeURIComponent(productLink || ''), productName || '', productDescription || '');
                 break;
             default:
                 console.error('Unknown format:', format);

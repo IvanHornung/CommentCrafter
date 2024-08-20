@@ -12,10 +12,12 @@ function downloadBlob(blob: Blob, filename: string) {
     window.URL.revokeObjectURL(url);
 }
 
-export function downloadJSON(comments: CommentData[], productLink: string, filename: string = 'export.json') {
+export function downloadJSON(comments: CommentData[], productLink: string, productName: string, productDescription: string, filename: string = 'export.json') {
     function convertToJSON(comments: CommentData[]): string {
         const data = {
             productLink: productLink,
+            productName: productName,
+            productDescription: productDescription,
             comments: comments
         };
         return JSON.stringify(data, null, 2);
@@ -26,10 +28,12 @@ export function downloadJSON(comments: CommentData[], productLink: string, filen
     downloadBlob(blob, filename);
 }
 
-export function downloadXML(comments: CommentData[], productLink: string, filename: string = 'export.xml') {
+export function downloadXML(comments: CommentData[], productLink: string, productName: string, productDescription: string, filename: string = 'export.xml') {
     function convertToXML(comments: CommentData[]): string {
         let xml = `<product>\n`;
         xml += `    <productLink>${productLink}</productLink>\n`;
+        xml += `    <productName>${productName}</productName>\n`;
+        xml += `    <productDescription>${productDescription}</productDescription>\n`;
         xml += `    <comments>\n`;
         comments.forEach(comment => {
             xml += `
@@ -49,9 +53,9 @@ export function downloadXML(comments: CommentData[], productLink: string, filena
     downloadBlob(blob, filename);
 }
 
-export function downloadCSV(comments: CommentData[], productLink: string, filename: string = 'export.csv') {
+export function downloadCSV(comments: CommentData[], productLink: string, productName: string, productDescription: string, filename: string = 'export.csv') {
     function convertToCSV(comments: CommentData[]): string {
-        const header = `Product Link:,${productLink}\ncomment,relevancy_score,offensivity_score,timestamp`;
+        const header = `Product Link:,${productLink}\nProduct Name:,${productName}\nProduct Description:,${productDescription}\ncomment,relevancy_score,offensivity_score,timestamp`;
         const rows = comments.map(comment => 
             `${comment.comment.replace(/,/g, '')},${comment.relevancy_score},${comment.offensivity_score},${comment.timestamp}`
         );

@@ -10,6 +10,7 @@ import SignInButton from "./sign-in-button";
 import { onAuthStateChangedHelper } from "../utilities/firebase/firebase";
 import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
+import GenerationHistoryButton from "./generation-history-button";
 
 
 
@@ -34,7 +35,10 @@ export default function NavBar() {
                 <Image width={270} height={60}
                     src="/cc-logo.svg" alt="CC Logo"/>
             </Link>
-            <SignInButton user={user}/>
+            <div className={styles.rightButtons}>
+                <GenerationHistoryButton user={user}/>
+                <SignInButton user={user}/>
+            </div>
         </nav>
     );
 }

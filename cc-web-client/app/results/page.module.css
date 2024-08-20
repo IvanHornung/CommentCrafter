@@ -7,6 +7,12 @@
     align-items: center; /* Aligns items vertically in the center */
 }
 
+.exportContainer {
+    display: flex;
+    justify-content: center; /* Center the button horizontally */
+    margin: 20px 0; /* Add some margin for spacing */
+}
+
 .inputBox {
     width: 48%; /* Each box takes up nearly half the width */
     border: 1px solid #aaa; /* Darker border */

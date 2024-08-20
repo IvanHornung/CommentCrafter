@@ -151,7 +151,6 @@ export default function ResultPage() {
     console.log(`Loading UI with ${comments.length} comments locally stored...`);
 
     return (
-        // TODO: make CSS files
         <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
             <h1>Generation Results</h1>
             <div className={styles.resultHeader}>
@@ -174,7 +173,9 @@ export default function ResultPage() {
                 </div>
             </div>
             
-            <ExportDropdown onExport={handleExport} comments={comments} productLink={productLink}/> 
+            <div className={styles.exportContainer}>
+                <ExportDropdown onExport={handleExport} comments={comments} productLink={productLink} productName={productData?.product_name} productDescription={productData?.description}/> 
+            </div>
             <CommentList comments={commentsForCurrentPage} />
             <Pagination 
                 currentPage={currentPage} 
