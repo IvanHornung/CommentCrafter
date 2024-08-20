@@ -1,4 +1,3 @@
-/* ExportDropdown.module.css */
 
 .dropdownContainer {
     position: relative;
@@ -18,7 +17,7 @@
 }
 
 .exportButton:hover {
-    background-color: #0056b3;
+    background-color: var(--deep-sky-blue);
 }
 
 .dropdownMenu {

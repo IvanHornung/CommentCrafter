@@ -299,3 +299,40 @@ def poll_comments() -> Response:
     except Exception as e:
         print("\t\tMAJOR ERROR @poll_comments", e)
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
+    
+
+@gen_bp.route("/poll-product-info", methods=["GET"])
+def poll_product_data() -> Response:
+    try:
+        user_id = request.args.get("user_id")
+        product_id = request.args.get("product_id")
+
+        print(f"\tPolling productInfo for product_id: {product_id}")
+
+        if not user_id or not product_id:
+            return jsonify({"error": "User ID and Product ID are required."}), 400
+
+        user_ref = db.collection("users").document(user_id)
+        product_ref = user_ref.collection("products").document(product_id)
+        product_doc = product_ref.get()
+
+        if not product_doc.exists:
+            return jsonify({"error": "Product not found."}), 404
+        
+        product_name = product_doc.get("product_name")
+        product_desc = product_doc.get("description")
+        product_price = product_doc.get("est_price")
+
+        if not product_desc:
+            print("\t\tError: Description not found.")
+            return jsonify({"error": "Description not found."}), 404
+
+
+        return jsonify({
+            "product_name": product_name, # if product_name is not None else "failed",
+            "description": product_desc,
+            "product_price": product_price
+        }), 200
+    except Exception as e:
+        print("\t\tMAJOR ERROR @poll_comments", e)
+        return jsonify({"error": "An error occurred.", "message": str(e)}), 500

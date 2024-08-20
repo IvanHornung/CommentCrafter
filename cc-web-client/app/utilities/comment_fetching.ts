@@ -14,11 +14,18 @@ export interface CommentData {
   timestamp: string;
 }
 
-export interface PollResponse {
+export interface ProductData {
+  product_name: string;
+  description: string;
+  product_price: string;
+}
+
+export interface PollResponseCommentGen {
   status: string;
   new_comments: CommentData[];
   total_comments: number;
 }
+
 
 
 /**
@@ -98,7 +105,7 @@ export async function pollForRemainingComments(
           throw new Error(`Polling failed with status: ${response.status}`);
       }
 
-      const data: PollResponse = await response.json();
+      const data: PollResponseCommentGen = await response.json();
 
       if (data.new_comments.length > 0) {
         // Update the last comment timestamp to the latest one
@@ -131,3 +138,50 @@ export async function pollForRemainingComments(
   return allComments;
 }
 
+
+export async function pollForProductInformation(
+  userId: string,
+  productId: string,
+  interval: number = 5000, // Polling interval in milliseconds
+  maxAttempts: number = 20,
+  setProductData: (newProductData: ProductData) => void): Promise<void> {
+    console.log(`Polling for product ${productId} information...`);
+    let productData: ProductData;
+    // let attempts = 0;
+    let shouldContinue = true;
+  
+    while (shouldContinue) {// && attempts < maxAttempts) {
+      try {
+        const url = new URL(`${config.api_url}/gen/poll-product-info`);
+        url.searchParams.append("user_id", userId);
+        url.searchParams.append("product_id", productId);
+  
+        const response = await fetch(url.toString())   
+  
+        if (!response.ok) {
+            throw new Error(`Polling failed with status: ${response.status}`);
+        }
+  
+        const data: ProductData = await response.json();
+  
+        if (data.product_name) {
+          // Update the last comment timestamp to the latest one
+          console.log(`Successfully polled and retrieved information for "${data.product_name} with description ${data.description}"!`);
+  
+          // Immediately update the state with new comments
+          setProductData(data);
+          shouldContinue = false;
+        } 
+      } catch (error) {
+          console.error("Error while polling for product_info:", error);
+          shouldContinue = false;
+      }
+  
+      // attempts += 1;
+  
+      if (shouldContinue) {
+          // Wait for the specified interval before polling again
+          await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    }
+}

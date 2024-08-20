@@ -6,9 +6,10 @@ import { CommentData } from '@/app/utilities/comment_fetching';
 interface ExportDropdownProps {
     onExport: (format: string) => void;
     comments: CommentData[];
+    productLink: string | null;
 }
 
-export default function ExportDropdown({ onExport, comments }: ExportDropdownProps) {
+export default function ExportDropdown({ onExport, comments, productLink }: ExportDropdownProps) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const toggleDropdown = () => {
@@ -20,13 +21,13 @@ export default function ExportDropdown({ onExport, comments }: ExportDropdownPro
 
         switch (format) {
             case 'JSON':
-                downloadJSON(comments);
+                downloadJSON(comments, decodeURIComponent(productLink || ''));
                 break;
             case 'XML':
-                downloadXML(comments);
+                downloadXML(comments, decodeURIComponent(productLink || ''));
                 break;
             case 'CSV':
-                downloadCSV(comments);
+                downloadCSV(comments, decodeURIComponent(productLink || ''));
                 break;
             default:
                 console.error('Unknown format:', format);

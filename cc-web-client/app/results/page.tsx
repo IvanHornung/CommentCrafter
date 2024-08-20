@@ -1,13 +1,17 @@
 "use client";
 
+import styles from "./page.module.css";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CommentData, triggerCommentsGen, pollForRemainingComments } from '../utilities/comment_fetching';
+import { CommentData, triggerCommentsGen, pollForRemainingComments as pollForGeneratedComments, ProductData, pollForProductInformation } from '../utilities/comment_fetching';
 import CommentList from './components/comment-list';
 import Pagination from './components/pagination';
 import { User } from "firebase/auth";
 import { getCurrentUser } from '../utilities/firebase/firebase';
 import ExportDropdown from './components/export-dropdown';
+import { pages } from 'next/dist/build/templates/app-page';
+
+
 
 export default function ResultPage() {
     const searchParams = useSearchParams();
@@ -23,8 +27,7 @@ export default function ResultPage() {
     const [currentPage, setCurrentPage] = useState(1); // manage current page (for pagination)
     const [productID, setProductID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
     const [genRequestID, setGenRequestID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
-    const [exportFormat, setExportFormat] = useState<string | null>(null); // manage export format
-
+    const [productData, setProductData] = useState<ProductData | null>(null);
 
     const MAX_COMMENTS_PER_PAGE = 50;
     const totalPages = Math.ceil(commentCount / MAX_COMMENTS_PER_PAGE);
@@ -75,9 +78,16 @@ export default function ResultPage() {
 
                 setProductID(newProductID);
                 setGenRequestID(newGenRequestID);
+                
+                pollForProductInformation(
+                    currentUser ? currentUser.uid : "",
+                    newProductID as string,
+                    5000, 20,
+                    setProductData
+                );
 
                 // start polling in the background without block (note: no await keyword)
-                pollForRemainingComments(
+                pollForGeneratedComments(
                     currentUser ? currentUser.uid : "",
                     newProductID as string,
                     newGenRequestID as string,
@@ -142,24 +152,30 @@ export default function ResultPage() {
 
     return (
         // TODO: make CSS files
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
-            <h1>Result Page</h1>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <p>Product Link: <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a></p>
-                    <p>Number of Comments: {commentCount}</p>
-                    <p>Pollution Level: {pollutionLevel}</p>
+        <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
+            <h1>Generation Results</h1>
+            <div className={styles.resultHeader}>
+                <div className={styles.outputBox}>
+                    <h3>{productData?.product_name}</h3>
+                    <p>{productData?.description}</p>
                 </div>
-                <ExportDropdown onExport={handleExport} comments={comments}/> 
+                <div className={styles.inputBox}>
+                    <h3>Your Input</h3>
+                    <div className={styles.inputBoxHeader}>
+                        <div className={styles.inputRowLink}>
+                            <p><b>Product Link:</b></p>
+                        </div>
+                        <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a>
+                        <div className={styles.inputRow}>
+                            <p><b>Number of Comments:</b> {commentCount}</p>
+                            <p><b>Pollution Level:</b> {pollutionLevel}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {/* Only display comments if they are available */}
-            {commentsForCurrentPage.length > 0 ? (
-                <CommentList comments={commentsForCurrentPage} />
-            ) : (
-                <div>Loading...</div>
-            )}
-
+            
+            <ExportDropdown onExport={handleExport} comments={comments} productLink={productLink}/> 
+            <CommentList comments={commentsForCurrentPage} />
             <Pagination 
                 currentPage={currentPage} 
                 totalPages={totalPages} 

@@ -1,0 +1,57 @@
+.resultHeader {
+    display: flex;
+    flex-direction: row; /* Align items in a row */
+    /* justify-content: space-between;  */
+    align-items: flex-start; /* Align items at the top */
+    gap: 10px; /* Optional: Add space between the two boxes */
+    align-items: center; /* Aligns items vertically in the center */
+}
+
+.inputBox {
+    width: 48%; /* Each box takes up nearly half the width */
+    border: 1px solid #aaa; /* Darker border */
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #eae1bd; /* Darker gray background */
+    margin-bottom: 20px;
+}
+
+.outputBox {
+    width: 48%; /* Each box takes up nearly half the width */
+    border: 1px solid #aaa; /* Darker border */
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #00bfff21; /* Darker gray background */
+    margin-bottom: 20px;
+}
+
+.inputBox h3, .outputBox h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.inputBoxHeader {
+    border: 1px solid #aaa; /* Darker border */
+    padding: 5px;
+    border-radius: 8px;
+    background-color: #eae1bd; /* Darker gray background */
+    margin-bottom: 0px;
+}
+
+.inputRowLink {
+    margin-left: 0px;
+    align-items: center; /* Aligns items vertically in the center */
+}
+
+.inputRow {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Aligns items vertically in the center */
+}
+
+.inputRow p {
+    margin: 0; /* Optional: Remove any default margins */
+    padding: 0 10px; /* Optional: Add some padding between the elements */
+}
