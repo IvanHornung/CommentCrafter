@@ -7,6 +7,7 @@ import CommentList from './components/comment-list';
 import Pagination from './components/pagination';
 import { User } from "firebase/auth";
 import { getCurrentUser } from '../utilities/firebase/firebase';
+import ExportDropdown from './components/export-dropdown';
 
 export default function ResultPage() {
     const searchParams = useSearchParams();
@@ -22,7 +23,8 @@ export default function ResultPage() {
     const [currentPage, setCurrentPage] = useState(1); // manage current page (for pagination)
     const [productID, setProductID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
     const [genRequestID, setGenRequestID] = useState<string | null>(null); // manage product ID for polling (effectively job ID)
-    
+    const [exportFormat, setExportFormat] = useState<string | null>(null); // manage export format
+
 
     const MAX_COMMENTS_PER_PAGE = 50;
     const totalPages = Math.ceil(commentCount / MAX_COMMENTS_PER_PAGE);
@@ -114,6 +116,12 @@ export default function ResultPage() {
         }
     };
 
+    const handleExport = (format: string) => {
+        console.log(`Exporting data as ${format}`);
+        // Implement the logic to export data based on the selected format
+    };
+
+
 
     if (loading) { // && currentPage === 1) {
         return <div>Loading comments...</div>;
@@ -136,9 +144,14 @@ export default function ResultPage() {
         // TODO: make CSS files
         <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
             <h1>Result Page</h1>
-            <p>Product Link: <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a></p>
-            <p>Number of Comments: {commentCount}</p>
-            <p>Pollution Level: {pollutionLevel}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <p>Product Link: <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a></p>
+                    <p>Number of Comments: {commentCount}</p>
+                    <p>Pollution Level: {pollutionLevel}</p>
+                </div>
+                <ExportDropdown onExport={handleExport} comments={comments}/> 
+            </div>
 
             {/* Only display comments if they are available */}
             {commentsForCurrentPage.length > 0 ? (

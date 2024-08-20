@@ -74,3 +74,43 @@
   align-items: center;
   gap: 8px;
 }
+
+
+.exportContainer {
+  position: relative;
+  margin-left: 20px; /* Adjust this according to your layout */
+}
+
+.exportButton {
+  padding: 10px 20px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.exportMenu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.exportMenu button {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exportMenu button:hover {
+  background-color: #f1f1f1;
+}
