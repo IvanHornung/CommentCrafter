@@ -30,7 +30,7 @@ export interface PollResponseCommentGen {
 
 /**
  * Fetch the first page of comments from the API and obtain job ID.
- * @param {strnig} user_id - firestore UID of active user
+ * @param {string} user_id - firestore UID of active user
  * @param {string} productLink - The link to the product.
  * @param {number} numCommentsFirstPage - The number of comments per page.
  * @param {string} pollutionLevel - The pollution level.
@@ -144,7 +144,7 @@ export async function pollForProductInformation(
   productId: string,
   interval: number = 5000, // Polling interval in milliseconds
   maxAttempts: number = 20,
-  setProductData: (newProductData: ProductData) => void): Promise<void> {
+  setProductData: (newProductData: ProductData) => void ): Promise<void> {
     console.log(`Polling for product ${productId} information...`);
     let productData: ProductData;
     // let attempts = 0;

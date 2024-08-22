@@ -150,6 +150,7 @@ Since its easy to add fields in Firebase given its schemaless nature, I will ref
     - `req_comments`
     - `export_format`
     - `pollution_level`
+- `comment_gen_limit` - for monetization and anti-spam
 
 **Gen_Request**
 - `request_source`: String - Indicates where the request was initiated from, such as a web app, mobile app, or API. This is useful for understanding how users are interacting with your service.

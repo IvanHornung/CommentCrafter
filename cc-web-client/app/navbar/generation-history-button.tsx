@@ -15,8 +15,9 @@ export default function GenerationHistoryButton({ user }: SignInProps) {
                     <button
                         className={styles.generationHistoryButton}
                         onClick={async () => {
-                            window.location.href = '/'; 
-                        }}
+                            const queryParams = new URLSearchParams({ userID: JSON.stringify(user.uid) });
+                            window.location.href = `/generation-history?${queryParams.toString()}`;
+                        }}                        
                     >
                         <b>Generation History</b>
                     </button>

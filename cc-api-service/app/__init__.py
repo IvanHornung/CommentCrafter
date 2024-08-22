@@ -8,6 +8,7 @@ from enum import Enum
 from flask import Flask
 from .auth import auth_bp
 from .comment_gen_controller import gen_bp
+from .gen_history_controller import history_bp
 from flask_cors import CORS
 
 class Status(Enum):
@@ -22,5 +23,6 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth_bp, url_prefix='/auth') # ex:100/auth/createUser
     app.register_blueprint(gen_bp, url_prefix='/gen')
+    app.register_blueprint(history_bp, url_prefix='/history')
 
     return app
