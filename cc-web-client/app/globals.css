@@ -1,5 +1,14 @@
 /* Define your colors */
 :root {
+    --header-and-footer: #1E1F26;
+    --primary-background: #F5F5F5;  
+    --buttons-and-highlights: #00BFFF;
+    --buttons-header: #FF6F61;
+    --text-color-header-and-footer: #FFFFFF;
+    --text-color-primary-background: #333333;
+    --borders-slider-and-input-field: #00BFFF;
+  
+  
     --deep-sky-blue: #00BFFF;
     --cosmic-latte: #F8F4E3;
     --ash-gray: #A2A392;
@@ -9,7 +18,7 @@
   
   /* Apply the background color to the entire body */
   body {
-    background-color: var(--cosmic-latte);
+    background-color: var(--primary-background);
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

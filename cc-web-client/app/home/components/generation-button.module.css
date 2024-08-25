@@ -8,7 +8,7 @@
   .generateButton {
     padding: 15px 40px;
     font-size: 18px;
-    background-color: var(--tomato); /* Tomato */
+    background-color: var(--buttons-and-highlights); /* Tomato */
     color: var(--cosmic-latte); /* Deep Sky Blue */
     border: none;
     border-radius: 5px;

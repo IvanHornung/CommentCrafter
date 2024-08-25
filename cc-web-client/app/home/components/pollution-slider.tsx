@@ -15,8 +15,8 @@ export default function PollutionSlider({ pollutionLevel, setPollutionLevel }: P
         <div className={styles.sliderContainer}>
             <p>Pollution Level:</p>
             <div className={styles.sliderValuesContainer}>
-                <input 
-                    type="range" 
+                <input type="range"
+                    className={styles.slider}
                     min="1" 
                     max="3" 
                     value={pollutionLevel === "Low" ? 1 : pollutionLevel === "Moderate" ? 2 : 3} 

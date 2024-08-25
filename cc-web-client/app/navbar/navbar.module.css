@@ -1,10 +1,11 @@
 .nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1em;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em;
+  background: var(--header-and-footer); 
+  /* linear-gradient(to bottom, #00bfff78, #1e8fff74); */
+}
 
 .rightButtons {
   display: flex;

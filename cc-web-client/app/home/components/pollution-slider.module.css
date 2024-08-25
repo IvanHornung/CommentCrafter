@@ -4,7 +4,6 @@
     flex-direction: column;
     align-items: center;
 }
-  
 
 .sliderValuesContainer {
     display: flex;
@@ -12,4 +11,9 @@
     align-items: center;
     gap: 1px;
     font-size: 10px;
+}
+
+/* Add this rule to make the slider red */
+.slider {
+    accent-color: var(--borders-slider-and-input-field); /* This changes the color of the slider thumb and track */
 }
