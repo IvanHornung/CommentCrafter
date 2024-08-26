@@ -11,7 +11,7 @@
 }
   
 .generationHistoryButton:hover {
-    background-color: #555555;
+    background-color: var(--buttons-header-hover);
     border: 1px solid transparent;
 }
   

@@ -8,14 +8,14 @@
   .generateButton {
     padding: 15px 40px;
     font-size: 18px;
-    background-color: var(--buttons-and-highlights); /* Tomato */
-    color: var(--cosmic-latte); /* Deep Sky Blue */
+    background-color: var(--buttons-and-highlights);
+    color: var(--primary-background);
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 .generateButton:hover {
-    background-color: var(--battleship-gray); /* Cosmic Latte */
+    background-color: var(--text-color-primary-background);
 }
   

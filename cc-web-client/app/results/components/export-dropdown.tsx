@@ -44,7 +44,7 @@ export default function ExportDropdown({ onExport, comments, productLink, produc
                 onClick={toggleDropdown} 
                 className={styles.exportButton}
             >
-                <b>Export</b>
+                Export
             </button>
             {dropdownOpen && (
                 <div className={styles.dropdownMenu}>

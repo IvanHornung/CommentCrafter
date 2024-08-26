@@ -4,16 +4,13 @@
     --primary-background: #F5F5F5;  
     --buttons-and-highlights: #00BFFF;
     --buttons-header: #FF6F61;
+    --buttons-header-hover: #E65A50;
     --text-color-header-and-footer: #FFFFFF;
     --text-color-primary-background: #333333;
     --borders-slider-and-input-field: #00BFFF;
-  
-  
-    --deep-sky-blue: #00BFFF;
-    --cosmic-latte: #F8F4E3;
-    --ash-gray: #A2A392;
-    --battleship-gray: #9A998C;
-    --tomato: #FE4A49;
+    --card-containers: #E0E0E0;
+    --text-product-description: #666666;
+
   }
   
   /* Apply the background color to the entire body */

@@ -10,6 +10,7 @@ import { User } from "firebase/auth";
 import { getCurrentUser } from '../utilities/firebase/firebase';
 import ExportDropdown from './components/export-dropdown';
 import { pages } from 'next/dist/build/templates/app-page';
+import ViewInputModal from "./components/input-view-modal";
 
 
 
@@ -150,34 +151,21 @@ export default function ResultPage() {
 
     console.log(`Loading UI with ${comments.length} comments locally stored...`);
 
+    // backgroundColor: 'var(--primary-background)'
+
     return (
-        <div style={{ padding: '40px', fontFamily: 'Arial, sans-serif', backgroundColor: '#F8F4E3' }}>
-            <h1>Generation Results</h1>
-            <div className={styles.resultHeader}>
-                <div className={styles.outputBox}>
-                    <h3>{productData?.product_name}</h3>
-                    <p>{productData?.description}</p>
-                </div>
-                <div className={styles.inputBox}>
-                    <h3>Your Input</h3>
-                    <div className={styles.inputBoxHeader}>
-                        <div className={styles.inputRowLink}>
-                            <p><b>Product Link:</b></p>
-                        </div>
-                        <a href={decodeURIComponent(productLink || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productLink || '')}</a>
-                        <div className={styles.inputRow}>
-                            <p><b>Number of Comments:</b> {commentCount}</p>
-                            <p><b>Pollution Level:</b> {pollutionLevel}</p>
-                        </div>
-                    </div>
-                </div>
+        <div className={styles.container}>
+            <h1 className={styles.productTitle}>{productData?.product_name}</h1>
+            <p className={styles.productDescription}>
+                {productData?.description}
+            </p>
+            <div className={styles.buttonGroup}>
+                <ViewInputModal productCanonicalizedURL={productData?.canonicalized_url} commentCount={commentCount} pollutionLevel={pollutionLevel}/>
+                <ExportDropdown onExport={handleExport} comments={comments} productLink={productLink} productName={productData?.product_name} productDescription={productData?.description}/>
             </div>
-            
-            <div className={styles.exportContainer}>
-                <ExportDropdown onExport={handleExport} comments={comments} productLink={productLink} productName={productData?.product_name} productDescription={productData?.description}/> 
-            </div>
+            <h1 className={styles.resultsTitle}>Generation Results</h1>
             <CommentList comments={commentsForCurrentPage} />
-            <Pagination 
+            <Pagination
                 currentPage={currentPage} 
                 totalPages={totalPages} 
                 handleNextPage={handleNextPage} 

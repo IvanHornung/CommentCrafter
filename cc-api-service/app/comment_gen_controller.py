@@ -10,7 +10,7 @@ from furl import furl
 from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
 from .comment_gen_parallelizer import parallelize_comment_tasks
-from .data_modules import Status
+from .data_modules import Status, print_error, print_info
 
 
 gen_bp = Blueprint("gen", __name__)
@@ -322,16 +322,20 @@ def poll_product_data() -> Response:
         product_name = product_doc.get("product_name")
         product_desc = product_doc.get("description")
         product_price = product_doc.get("est_price")
+        canonicalized_url = product_doc.get("url")
 
         if not product_desc:
             print("\t\tError: Description not found.")
             return jsonify({"error": "Description not found."}), 404
 
+        if not canonicalized_url:
+            print_error("Canonicalized URL not found")
 
         return jsonify({
             "product_name": product_name, # if product_name is not None else "failed",
             "description": product_desc,
-            "product_price": product_price
+            "product_price": product_price,
+            "canonicalized_url": canonicalized_url
         }), 200
     except Exception as e:
         print("\t\tMAJOR ERROR @poll_comments", e)

@@ -1,63 +1,77 @@
-.resultHeader {
-    display: flex;
-    flex-direction: row; /* Align items in a row */
-    /* justify-content: space-between;  */
-    align-items: flex-start; /* Align items at the top */
-    gap: 10px; /* Optional: Add space between the two boxes */
-    align-items: center; /* Aligns items vertically in the center */
+.container {
+    font-family: Arial, sans-serif;
+    background-color: var(--primary-background);
+    color: var(--text-color-primary-background);
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 60%;
+    max-width: 800px;
 }
 
-.exportContainer {
-    display: flex;
-    justify-content: center; /* Center the button horizontally */
-    margin: 20px 0; /* Add some margin for spacing */
+.productTitle {
+    font-size: 24px;
+    color: var(--text-color-primary-background);
+    margin-bottom: 10px;
 }
 
-.inputBox {
-    width: 48%; /* Each box takes up nearly half the width */
-    border: 1px solid #aaa; /* Darker border */
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #eae1bd; /* Darker gray background */
+.productDescription {
+    font-size: 16px;
+    color: var(--text-product-description);
     margin-bottom: 20px;
 }
 
-.outputBox {
-    width: 48%; /* Each box takes up nearly half the width */
-    border: 1px solid #aaa; /* Darker border */
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #00bfff21; /* Darker gray background */
+.buttonGroup {
+    display: flex;
+    justify-content: center;
     margin-bottom: 20px;
 }
 
-.inputBox h3, .outputBox h3 {
-    margin: 0 0 10px 0;
-    font-size: 18px;
-    color: #333;
+.btn {
+    background-color: var(--buttons-and-highlights);
+    color: var(--text-color-header-and-footer);
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
-.inputBoxHeader {
-    border: 1px solid #aaa; /* Darker border */
-    padding: 5px;
-    border-radius: 8px;
-    background-color: #eae1bd; /* Darker gray background */
-    margin-bottom: 0px;
+.btn:hover {
+    background-color: var(--text-color-primary-background);
 }
 
-.inputRowLink {
-    margin-left: 0px;
-    align-items: center; /* Aligns items vertically in the center */
+.resultsTitle {
+    font-size: 30px;
+    color: #333333;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
-.inputRow {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* Aligns items vertically in the center */
+.commentList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
 }
 
-.inputRow p {
-    margin: 0; /* Optional: Remove any default margins */
-    padding: 0 10px; /* Optional: Add some padding between the elements */
+.commentItem {
+    background-color: white;
+    border: 1px solid var(--buttons-and-highlights);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.commentText {
+    margin: 0;
+    font-weight: bold;
+}
+
+.score {
+    margin: 5px 0 0 0;
+    font-size: 0.9em;
+    color: var(--text-product-description);
 }

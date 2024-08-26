@@ -18,6 +18,7 @@ export interface ProductData {
   product_name: string;
   description: string;
   product_price: string;
+  canonicalized_url: string;
 }
 
 export interface PollResponseCommentGen {

@@ -70,7 +70,7 @@ f"""
 
 Given the product link above, return a JSON object with the following defined
 - `url` - the URL just given to you
-- `product_name` - determine the name of the product in the link, limit to 75 characters
+- `product_name` - determine the name of the product in the link, limit to 100 characters
 - `description` - generate a paragraph describing the product, limit to 200 characters
 - `est_price` - floating point USD price the product is selling for given the page data
 

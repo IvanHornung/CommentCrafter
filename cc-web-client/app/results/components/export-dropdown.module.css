@@ -5,8 +5,9 @@
 }
 
 .exportButton {
-    background-color: #007bff;
-    color: white;
+    margin: 0 10px;
+    background-color: var(--buttons-and-highlights);
+    color: var(--primary-background);
     padding: 10px 30px;
     font-size: 16px;
     border: none;
@@ -17,7 +18,7 @@
 }
 
 .exportButton:hover {
-    background-color: var(--deep-sky-blue);
+    background-color: var(--text-color-primary-background);
 }
 
 .dropdownMenu {

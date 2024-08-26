@@ -29,16 +29,24 @@ export function downloadJSON(comments: CommentData[], productLink: string, produ
 }
 
 export function downloadXML(comments: CommentData[], productLink: string, productName: string, productDescription: string, filename: string = 'export.xml') {
+    function escapeXML(str: string): string {
+        return str.replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&apos;');
+    }
+
     function convertToXML(comments: CommentData[]): string {
         let xml = `<product>\n`;
-        xml += `    <productLink>${productLink}</productLink>\n`;
-        xml += `    <productName>${productName}</productName>\n`;
-        xml += `    <productDescription>${productDescription}</productDescription>\n`;
+        xml += `    <productLink>${escapeXML(productLink)}</productLink>\n`;
+        xml += `    <productName>${escapeXML(productName)}</productName>\n`;
+        xml += `    <productDescription>${escapeXML(productDescription)}</productDescription>\n`;
         xml += `    <comments>\n`;
         comments.forEach(comment => {
             xml += `
         <comment>
-            <text>${comment.comment}</text>
+            <text>${escapeXML(comment.comment)}</text>
             <relevancy_score>${comment.relevancy_score}</relevancy_score>
             <offensivity_score>${comment.offensivity_score}</offensivity_score>
             <timestamp>${comment.timestamp}</timestamp>
