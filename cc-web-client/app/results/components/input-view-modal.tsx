@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import styles from './input-view-modal.module.css';
-import { ProductData } from '@/app/utilities/comment_fetching';
 
 
 interface ViewInputModalProps {
@@ -34,7 +33,7 @@ export default function ViewInputModal({productCanonicalizedURL, commentCount, p
                         <p><a href={decodeURIComponent(productCanonicalizedURL || '')} target="_blank" rel="noopener noreferrer">{decodeURIComponent(productCanonicalizedURL || '')}</a></p>
                         <p><strong>Number Comments Requested:</strong></p>
                         <p>{commentCount}</p>
-                        <p><strong>Requested Pollution Level::</strong></p>
+                        <p><strong>Requested Pollution Level:</strong></p>
                         <p>{pollutionLevel}</p>
                         <button onClick={closeModal} className={styles.closeButton}>Close</button>
                     </div>

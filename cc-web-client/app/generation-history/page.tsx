@@ -1,35 +1,17 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { fetchUserRequestSummary, UserSummary } from '../utilities/generation_history_fetching';
+import { fetchProductRequests as fetchUserProductRequests, fetchUserRequestSummary, ProductItem, UserSummary } from '../utilities/generation_history_fetching';
 import styles from "./page.module.css";
-
-const mockData = [
-    {
-      productName: "Gravity Zero Recliner - Outdoor Folding Adjustable Zero Gravity Chair",
-      totalGenerations: 120,
-      totalRequests: 15,
-    },
-    {
-      productName: "Product B",
-      totalGenerations: 85,
-      totalRequests: 10,
-    },
-    {
-      productName: "Product C",
-      totalGenerations: 230,
-      totalRequests: 25,
-    },
-    {
-      productName: "Product D",
-      totalGenerations: 150,
-      totalRequests: 20,
-    },
-  ];
+import ProductCardList from './product-card-list';
+import ViewRequestSummaryModal from './view-request-summary-modal';
 
 
-function GenerationHistoryPage() {
+
+export default function GenerationHistoryPage() {
     const [userSummary, setUserSummary] = useState<UserSummary | null>(null);
+    const [productList, setProductList] = useState<ProductItem[]>([]);
+    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +24,11 @@ function GenerationHistoryPage() {
                 userIDParam,
                 setUserSummary
             );
+
+            fetchUserProductRequests(
+               userIDParam,
+               setProductList
+            )
         } else {
             setError('No userID provided in the URL');
         }
@@ -58,18 +45,11 @@ function GenerationHistoryPage() {
 
     return (
         <div className={styles.container}>
-          <h1>Generation History</h1>
-          <div className={styles.cardContainer}>
-            {mockData.map((product, index) => (
-              <div key={index} className={styles.card}>
-                <h2>{product.productName}</h2>
-                <p>Total Generations: {product.totalGenerations}</p>
-                <p>Total Requests: {product.totalRequests}</p>
-              </div>
-            ))}
+          <div className={styles.header}>
+            <h1>Generation History</h1>
+            <ViewRequestSummaryModal total_comment_generations={userSummary?.total_comment_generations} total_gen_requests={userSummary?.total_gen_requests}/>
           </div>
+          <ProductCardList />
         </div>
       );
 }
-
-export default GenerationHistoryPage;

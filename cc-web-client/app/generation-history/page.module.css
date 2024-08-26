@@ -1,27 +1,53 @@
 .container {
-    padding: 20px;
-  }
-  
-  .cardContainer {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-  }
-  
-  .card {
-    background-color: #f8f8f8;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-  }
-  
-  .card h2 {
-    margin-bottom: 10px;
-    color: #333;
-  }
-  
-  .card p {
-    color: #666;
-  }
-  
+  padding: 20px;
+  max-width: 1200px; /* Set a maximum width for the content */
+  margin: 0 auto;    /* Center the content horizontally */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between; /* Places items at opposite ends */
+  align-items: center; /* Vertically aligns items */
+  margin-bottom: 20px; /* Adds some space below the header */
+}
+
+
+.cardContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid var(--borders-slider-and-input-field); /* Adds a blue border */
+  box-shadow: 0 2px 5px rgba(0, 191, 255, 0.5); /* Adds a blue shadow */
+  text-align: center;
+  height: 250px; /* Set a fixed height for all cards */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center content vertically */
+}
+
+.cardLink {
+  text-decoration: none; /* Remove underline from the link */
+  color: inherit;        /* Inherit the text color */
+}
+
+.cardLink:hover .card {
+  background-color: #e0f7ff; /* Darker shade on hover */
+  box-shadow: 0 4px 10px rgba(0, 191, 255, 0.7); /* Stronger shadow on hover */
+}
+
+.card h2 {
+  margin-bottom: 10px;
+  color: var(--text-color-primary-background);
+  flex-grow: 1; /* Make the title take up available space */
+}
+
+.card p {
+  color: var(--text-product-description);
+  margin: 5px 0; /* Add a bit of margin between the paragraphs */
+}
