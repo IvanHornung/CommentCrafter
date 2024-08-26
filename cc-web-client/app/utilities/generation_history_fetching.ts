@@ -7,7 +7,10 @@ export interface UserSummary {
 }
 
 export interface ProductItem {
-
+    product_id: string;
+    product_name: string;
+    total_comments: number;
+    total_gen_requests: number;
 }
 
 export async function fetchUserRequestSummary(
@@ -37,17 +40,19 @@ export async function fetchProductRequests(
     setProductRequests: (newProductRequests: ProductItem[]) => void
 ): Promise<void> {
     try {
-        // const url = new URL(`${config.api_url}/history/retrieve-user-summary`);
-        // url.searchParams.append("user_id", userId);
+        const url = new URL(`${config.api_url}/history/retrieve-user-product-request`);
+        url.searchParams.append("user_id", userId);
 
-        // const response = await fetch(url.toString())   
+        const response = await fetch(url.toString())   
 
-        // if (!response.ok) {
-        //     throw new Error(`Retrieval failed with status: ${response.status}`);
-        // }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    
+        const products: ProductItem[] = await response.json();
 
-        // const userSummary: UserSummary = await response.json();
-        // setProductRequests(todo);
+        setProductRequests(products);
+
     } catch (error) {
         console.error("Error while retrieving user past product generations:", error);//, attempts);
     }

@@ -49,7 +49,7 @@ export default function GenerationHistoryPage() {
             <h1>Generation History</h1>
             <ViewRequestSummaryModal total_comment_generations={userSummary?.total_comment_generations} total_gen_requests={userSummary?.total_gen_requests}/>
           </div>
-          <ProductCardList />
+          <ProductCardList productList={productList}/>
         </div>
       );
 }

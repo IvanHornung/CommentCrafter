@@ -1,3 +1,4 @@
+import { ProductItem } from "../utilities/generation_history_fetching";
 import styles from "./page.module.css";
 
 const mockData = [
@@ -33,22 +34,32 @@ const mockData = [
       },
   ];
 
-export default function ProductCardList() {
+
+export interface ProductCardListProps {
+    productList: ProductItem[];
+}  
+
+export default function ProductCardList({ productList }: ProductCardListProps) {
+    console.log(productList)
     return (
         <div className={styles.cardContainer}>
-            {mockData.map((product, index) => (
-            <a
-            key={index} 
-            href={`https://github.com/IvanHornung`}  // Assuming you have a route for each product
-            className={styles.cardLink}      // Add this class for additional styling if needed
-            >
-                <div key={index} className={styles.card}>
-                    <h2>{product.productName}</h2>
-                    <p><b>Total Generations:</b> {product.totalGenerations}</p>
-                    <p><b>Total Requests:</b> {product.totalRequests}</p>
-                </div>
-            </a>
-            ))}
-          </div>
+            {productList && productList.length > 0 ? (
+                productList.map((product, index) => (
+                    <a
+                        key={index} 
+                        href={`https://github.com/IvanHornung`}  // Assuming you have a route for each product
+                        className={styles.cardLink}      // Add this class for additional styling if needed
+                    >
+                        <div key={index} className={styles.card}>
+                            <h2>{product.product_name}</h2>
+                            <p><b>Total Generations:</b> {product.total_comments}</p>
+                            <p><b>Total Requests:</b> {product.total_gen_requests}</p>
+                        </div>
+                    </a>
+                ))
+            ) : (
+                <p>No products available.</p> // Optional: Add a fallback if the list is empty or undefined
+            )}
+        </div>
     );
 }
