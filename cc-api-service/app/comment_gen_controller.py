@@ -323,6 +323,22 @@ def poll_product_data() -> Response:
         product_desc = product_doc.get("description")
         product_price = product_doc.get("est_price")
         canonicalized_url = product_doc.get("url")
+        total_comments = product_doc.get("total_comments")
+        total_gen_requests = product_doc.get("total_gen_requests")
+        
+        
+        gen_req_collection_ref = product_ref.collection('gen_requests')
+        gen_req_docs = gen_req_collection_ref.stream()
+
+        gen_req_list = []
+        for doc in gen_req_docs:
+            gen_req_data = doc.to_dict()
+            gen_req_list.append({
+                'id': doc.id,  # Include the document ID
+                'num_comments_generated': gen_req_data.get('num_comments_generated', 0),
+                'pollution_level': gen_req_data.get('pollution_level', 'UNKNOWN'),
+                'request_timestamp': gen_req_data.get('request_timestamp', '')
+            })
 
         if not product_desc:
             print("\t\tError: Description not found.")
@@ -335,8 +351,12 @@ def poll_product_data() -> Response:
             "product_name": product_name, # if product_name is not None else "failed",
             "description": product_desc,
             "product_price": product_price,
-            "canonicalized_url": canonicalized_url
+            "canonicalized_url": canonicalized_url,
+            "total_comments": total_comments,
+            "total_gen_requests": total_gen_requests,
+            "gen_req_list": gen_req_list,
         }), 200
     except Exception as e:
-        print("\t\tMAJOR ERROR @poll_comments", e)
+        print_error(f"\t\tError @poll_comments {e}")
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
+

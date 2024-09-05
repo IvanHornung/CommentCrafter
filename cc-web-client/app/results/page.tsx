@@ -3,13 +3,12 @@
 import styles from "./page.module.css";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CommentData, triggerCommentsGen, pollForRemainingComments as pollForGeneratedComments, ProductData, pollForProductInformation } from '../utilities/comment_fetching';
+import { CommentData, triggerCommentsGen, pollForGeneratedComments as pollForGeneratedComments, ProductData, pollForProductInformation } from '../utilities/comment_fetching';
 import CommentList from './components/comment-list';
 import Pagination from './components/pagination';
 import { User } from "firebase/auth";
 import { getCurrentUser } from '../utilities/firebase/firebase';
 import ExportDropdown from './components/export-dropdown';
-import { pages } from 'next/dist/build/templates/app-page';
 import ViewInputModal from "./components/input-view-modal";
 
 
@@ -129,9 +128,7 @@ export default function ResultPage() {
 
     const handleExport = (format: string) => {
         console.log(`Exporting data as ${format}`);
-        // Implement the logic to export data based on the selected format
     };
-
 
 
     if (loading) { // && currentPage === 1) {
@@ -150,8 +147,6 @@ export default function ResultPage() {
     const commentsForCurrentPage = comments.length > 0 ? comments.slice(indexFirstComment, indexLastComment) : [];
 
     console.log(`Loading UI with ${comments.length} comments locally stored...`);
-
-    // backgroundColor: 'var(--primary-background)'
 
     return (
         <div className={styles.container}>

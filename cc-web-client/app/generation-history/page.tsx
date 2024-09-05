@@ -9,6 +9,7 @@ import ViewRequestSummaryModal from './view-request-summary-modal';
 
 
 export default function GenerationHistoryPage() {
+    const [userID, setUserID] = useState<string | null>(null);
     const [userSummary, setUserSummary] = useState<UserSummary | null>(null);
     const [productList, setProductList] = useState<ProductItem[]>([]);
     
@@ -18,6 +19,7 @@ export default function GenerationHistoryPage() {
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
         const userIDParam = queryParams.get('userID')?.replace(/['"]+/g, '');
+        setUserID(userIDParam as string);
 
         if (userIDParam) {
             fetchUserRequestSummary(
@@ -49,7 +51,7 @@ export default function GenerationHistoryPage() {
             <h1>Generation History</h1>
             <ViewRequestSummaryModal total_comment_generations={userSummary?.total_comment_generations} total_gen_requests={userSummary?.total_gen_requests}/>
           </div>
-          <ProductCardList productList={productList}/>
+          <ProductCardList userID={userID || ""} productList={productList}/>
         </div>
       );
 }

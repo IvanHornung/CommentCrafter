@@ -1,0 +1,95 @@
+.container {
+    font-family: Arial, sans-serif;
+    background-color: var(--primary-background);
+    color: var(--text-color-primary-background);
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 60%;
+    max-width: 800px;
+}
+
+.productTitle {
+    font-size: 24px;
+    color: var(--text-color-primary-background);
+    margin-bottom: 10px;
+}
+
+.productDescription {
+    font-size: 16px;
+    color: var(--text-product-description);
+    margin-bottom: 20px;
+}
+
+.buttonGroup {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.btn {
+    background-color: var(--buttons-and-highlights);
+    color: var(--text-color-header-and-footer);
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn:hover {
+    background-color: var(--text-color-primary-background);
+}
+
+.resultsTitle {
+    font-size: 30px;
+    color: #333333;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.commentList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.commentItem {
+    background-color: white;
+    border: 1px solid var(--buttons-and-highlights);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.commentText {
+    margin: 0;
+    font-weight: bold;
+}
+
+.score {
+    margin: 5px 0 0 0;
+    font-size: 0.9em;
+    color: var(--text-product-description);
+}
+
+
+.stats {
+    display: flex;
+    justify-content: center; /* Center the boxes horizontally */
+    align-items: center; /* Center the boxes vertically */
+    gap: 10px; /* Space between the boxes */
+}
+
+.statBox {
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

@@ -21,12 +21,27 @@ export interface ProductData {
   canonicalized_url: string;
 }
 
+export interface ProductRecordData {
+  product_name: string;
+  description: string;
+  product_price: string;
+  canonicalized_url: string;
+  total_comments: number;
+  total_gen_requests: number;
+  gen_req_list: GenReq[];
+}
+
 export interface PollResponseCommentGen {
   status: string;
   new_comments: CommentData[];
   total_comments: number;
 }
 
+export interface GenReq {
+  num_comments_generated: number;
+  pollution_level: string;
+  request_timestamp: string;
+}
 
 
 /**
@@ -76,7 +91,7 @@ export async function triggerCommentsGen({
   }
 }
 
-export async function pollForRemainingComments(
+export async function pollForGeneratedComments(
   userId: string,
   productId: string,
   genRequestId: string,
@@ -185,4 +200,66 @@ export async function pollForProductInformation(
           await new Promise(resolve => setTimeout(resolve, interval));
       }
     }
+}
+
+
+export async function fetchProductInformation(
+  userId: string,
+  productId: string,
+  setProductData: (newProductData: ProductRecordData) => void ): Promise<void> {
+    console.log(`Fetching for product ${productId} information...`);
+    // let attempts = 0;  
+    try {
+      const url = new URL(`${config.api_url}/gen/poll-product-info`);
+      url.searchParams.append("user_id", userId);
+      url.searchParams.append("product_id", productId);
+
+      const response = await fetch(url.toString())   
+
+      if (!response.ok) {
+          throw new Error(`Polling failed with status: ${response.status}`);
+      }
+
+      const data: ProductRecordData = await response.json();
+
+      if (data.product_name) {
+        // Update the last comment timestamp to the latest one
+        console.log(`Successfully polled and retrieved information for "${data.product_name} with description ${data.description}"!`);
+
+        // Immediately update the state with new comments
+        setProductData(data);
+      } 
+    } catch (error) {
+        console.error("Error while polling for product_info:", error);
+    }
+}
+
+
+export async function fetchAggregateCommentsForProduct(
+  userID: string, 
+  productID: string,
+  setAggregateComments: (commentsFetched: CommentData[]) => void
+): Promise<void> {
+  console.log(`Fetching for aggregate comments for product ${productID} information...`);
+  // let attempts = 0;  
+  try {
+    const url = new URL(`${config.api_url}/history/retrieve-aggregate-comments-for-product`);
+    url.searchParams.append("user_id", userID);
+    url.searchParams.append("product_id", productID);
+
+    const response = await fetch(url.toString())   
+
+    if (!response.ok) {
+        throw new Error(`Polling failed with status: ${response.status}`);
+    }
+
+    const comments: CommentData[] = await response.json();
+
+    if (comments) {
+      // Immediately update the state with new comments
+      setAggregateComments(comments);
+    } 
+  } catch (error) {
+      console.error("Error while polling for product_info:", error);
+  }
 }
