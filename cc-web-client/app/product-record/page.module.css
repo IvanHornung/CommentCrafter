@@ -10,6 +10,20 @@
     max-width: 800px;
 }
 
+.buttonWrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px; /* Add some spacing between the stats and the button */
+}
+
+.header {
+    display: flex;
+    justify-content: space-between; /* Places items at opposite ends */
+    align-items: center; /* Vertically aligns items */
+    margin-bottom: 20px; /* Adds some space below the header */
+  }
+  
+
 .productTitle {
     font-size: 24px;
     color: var(--text-color-primary-background);

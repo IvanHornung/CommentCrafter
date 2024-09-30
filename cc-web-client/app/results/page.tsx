@@ -1,9 +1,9 @@
 "use client";
 
-import styles from "./page.module.css";
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { CommentData, triggerCommentsGen, pollForGeneratedComments as pollForGeneratedComments, ProductData, pollForProductInformation } from '../utilities/comment_fetching';
+import styles from "./page.module.css";
+import { CommentData, triggerCommentsGen, pollForGeneratedComments, ProductData, pollForProductInformation } from '../utilities/comment_fetching';
 import CommentList from './components/comment-list';
 import Pagination from './components/pagination';
 import { User } from "firebase/auth";
@@ -11,9 +11,7 @@ import { getCurrentUser } from '../utilities/firebase/firebase';
 import ExportDropdown from './components/export-dropdown';
 import ViewInputModal from "./components/input-view-modal";
 
-
-
-export default function ResultPage() {
+function ResultPageContent() {
     const searchParams = useSearchParams();
     const productLink = searchParams.get('productLink');
     const commentCountString = searchParams.get('commentCount');
@@ -40,8 +38,6 @@ export default function ResultPage() {
             return;
         }
     
-        // If we're here, it means we're still loading comments in the background.
-        // Either get first page comments or continue polling until all comments are loaded
         try {
             setLoading(true);            
 
@@ -54,17 +50,15 @@ export default function ResultPage() {
                 console.log(`Current user: ${currentUser ? currentUser.uid : "NULL"}`)
             }
 
-                // If user is still not available after attempting to fetch, exit the function
             if (!currentUser) {
                 console.error("User not logged in.");
                 setError("User not logged in.");
                 return;
             }
 
-            if (!productID) { // if productID state var isn't stored, we need to instantiate it and trigger comment_Gen
-                console.log("Triggering comment generation...")
+            if (!productID) { 
+                console.log("Triggering comment generation...");
 
-                // Fetch initial comments and product ID only if not already done
                 const {
                     comments: initialComments,
                     productID: newProductID,
@@ -86,7 +80,6 @@ export default function ResultPage() {
                     setProductData
                 );
 
-                // start polling in the background without block (note: no await keyword)
                 pollForGeneratedComments(
                     currentUser ? currentUser.uid : "",
                     newProductID as string,
@@ -107,12 +100,10 @@ export default function ResultPage() {
         }
     };
 
-    // Effect Hook to Trigger Data Fetching - This hook is used to trigger side effects.
-    //   Here, it runs fetchCommentsForPage whenever currentPage changes.
-
+    // Trigger data fetching when currentPage changes
     useEffect(() => {
-        fetchCommentsForPage(currentPage); // Fetch comments for the current page when component mounts or page changes
-    }, [currentPage]);
+        fetchCommentsForPage(currentPage);
+    }, [currentPage, productLink, commentCount, pollutionLevel, productID, user]);
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
@@ -130,23 +121,19 @@ export default function ResultPage() {
         console.log(`Exporting data as ${format}`);
     };
 
-
-    if (loading) { // && currentPage === 1) {
+    if (loading) {
         return <div>Loading comments...</div>;
-    } if (error) {
+    } 
+    if (error) {
         return <div>Error: {error}</div>;
     }
 
-    // Calculate the range of comments to display based on current page
-    // TODO: refactor this into its own method for readability
     const indexFirstComment = (currentPage - 1) * MAX_COMMENTS_PER_PAGE;
     const indexLastComment = indexFirstComment + ((currentPage == totalPages) ? 
         comments.length % MAX_COMMENTS_PER_PAGE || MAX_COMMENTS_PER_PAGE : 
         MAX_COMMENTS_PER_PAGE
     );
     const commentsForCurrentPage = comments.length > 0 ? comments.slice(indexFirstComment, indexLastComment) : [];
-
-    console.log(`Loading UI with ${comments.length} comments locally stored...`);
 
     return (
         <div className={styles.container}>
@@ -167,5 +154,13 @@ export default function ResultPage() {
                 handlePreviousPage={handlePreviousPage} 
             />
         </div>
+    );
+}
+
+export default function ResultPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ResultPageContent />
+        </Suspense>
     );
 }
