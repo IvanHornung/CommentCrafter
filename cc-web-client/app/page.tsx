@@ -14,3 +14,6 @@ export default function Home() {
 // time period in seconds that we are going to refetch all http requests
 export const revalidate = 30;
  
+    
+
+ 

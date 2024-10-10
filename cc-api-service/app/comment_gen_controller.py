@@ -224,7 +224,7 @@ def generate_comments() -> Response:
             "gen_request_id": gen_request_ref.id}), 201
 
     except Exception as e:
-        print("\t\t@generate_comments: MAJOR ERROR", e)
+        print_error("\t\t@generate_comments:", e)
         return jsonify({"error": "An error occurred.", "message": str(e)}), 500
 
 
